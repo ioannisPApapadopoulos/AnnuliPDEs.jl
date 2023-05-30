@@ -1,0 +1,8 @@
+name = "AnnuliPDEs"
+uuid = "f4e2d45b-b1f0-4a55-8293-f4e67b32e009"
+authors = ["john.papad "]
+version = "0.1.0"
+
+[deps]
+ClassicalOrthogonalPolynomials = "b30e2e7b-c4ee-47da-9d5f-2c5c27239acd"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"

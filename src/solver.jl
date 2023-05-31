@@ -4,7 +4,7 @@ Solver routines
 
 # This function splits the Helmholtz solve via Zernike (annular) polys into a series of
 # one-dimensional solves per Fourier mode with decreasing size.
-function helmholtz_modal_solve(f::BlockVector, b::Int, Δ::MultivariateOrthogonalPolynomials.ModalInterlace, L::MultivariateOrthogonalPolynomials.ModalInterlace, λ::T=0.0, mmode=2:b) where T 
+function helmholtz_modal_solve(f::BlockVector, b::Int, Δ::MultivariateOrthogonalPolynomials.ModalInterlace, L::MultivariateOrthogonalPolynomials.ModalInterlace, λ::T=0.0, mmode=1:b) where T 
     Δs = Δ.ops
     Ls = L.ops
     
@@ -12,15 +12,23 @@ function helmholtz_modal_solve(f::BlockVector, b::Int, Δ::MultivariateOrthogona
     N = size(fs,1)
     us = zeros(N, size(fs,2))
     
-    us[:,1] = (Δs[1])[1:N,1:N] \ fs[1:N,1]
+    
     for j in mmode
         M = length(j:2:b)
         if λ != 0
-            us[1:M,2j-2] = (Δs[j]+λ*Ls[j])[1:M,1:M] \ fs[1:M,2j-2]
-            us[1:M,2j-1] = (Δs[j]+λ*Ls[j])[1:M,1:M] \ fs[1:M,2j-1]
+            if j == 1
+                us[1:M,1] = (Δs[1]+λ*Ls[1])[1:M,1:M] \ fs[1:M,1]
+            else
+                us[1:M,2j-2] = (Δs[j]+λ*Ls[j])[1:M,1:M] \ fs[1:M,2j-2]
+                us[1:M,2j-1] = (Δs[j]+λ*Ls[j])[1:M,1:M] \ fs[1:M,2j-1]
+            end
         else
-            us[1:M,2j-2] = (Δs[j])[1:M,1:M] \ fs[1:M,2j-2]
-            us[1:M,2j-1] = (Δs[j])[1:M,1:M] \ fs[1:M,2j-1]
+            if j == 1
+                us[1:M,1] = (Δs[1])[1:M,1:M] \ fs[1:M,1]
+            else
+                us[1:M,2j-2] = (Δs[j])[1:M,1:M] \ fs[1:M,2j-2]
+                us[1:M,2j-1] = (Δs[j])[1:M,1:M] \ fs[1:M,2j-1]
+            end
         end
     end
     ModalTrav(us)[Block.(1:b)]

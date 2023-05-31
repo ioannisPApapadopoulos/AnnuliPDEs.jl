@@ -62,7 +62,7 @@ function collect_errors(Z::Vector{MultivariateOrthogonalPolynomial{2,T}}, u::Tup
     Θ = last.(rθ)
     U = map(ua, R, Θ)
     
-    append!(errors, [[norm(Uₐ-valsₐ, ∞), norm(U-vals, ∞)]])
+    append!(errors, [max(norm(Uₐ-valsₐ, ∞), norm(U-vals, ∞))])
     return errors
 end
 
@@ -76,19 +76,50 @@ function collect_errors(U::Adjoint{T, Matrix{T}}, 𝛉::AbstractArray, 𝐫::Abs
     return errors
 end
 
-function collect_errors(TFρ::Tuple, X::AbstractMatrix, ua::Function, errors=[])
-
-    (T, F, ρ) = TFρ
-    n = size(X,1)-2
-    Z = ZernikeAnnulus(ρ,1,1)
-    g = AlgebraicCurveOrthogonalPolynomials.grid(Z, Block(n))
-    p = g -> [g.r, g.θ]; rθ = map(p, g); rs = first.(rθ)[:,1]; θs = last.(rθ)[1,:]
-    # Compute values of the solution on the grid
-    Uu = (F[θs,1:n+2]*(T[rs,1:n+2]*X)')'
-    collect_errors(Uu, θs, rs, ua, errors)
-
+function collect_errors(U::Adjoint{T, Matrix{T}}, Uₐ::Adjoint{T, Matrix{T}}, θ::AbstractArray, r::AbstractArray, rₐ::AbstractArray, ua::Function, errors=[]) where T
+    
+    R = repeat(r, 1, length(θ))
+    Rₐ = repeat(rₐ, 1, length(θ))
+    Θ = repeat(θ, 1, length(r))
+    Θₐ = repeat(θ, 1, length(rₐ))
+    Ua = map(ua, R, Θ')
+    Uaₐ = map(ua, Rₐ, Θₐ')
+    
+    append!(errors, max(norm(Ua-U, ∞),norm(Uaₐ-Uₐ, ∞)))
+    return errors
 end
 
+function collect_errors(TFρ::Tuple, X::AbstractMatrix, ua::Function, errors=[])
+    if length(TFρ) == 3
+        (T, F, ρ) = TFρ
+        n = size(X,1)-2
+        Z = ZernikeAnnulus(ρ,1,1)
+        g = AlgebraicCurveOrthogonalPolynomials.grid(Z, Block(n))
+        p = g -> [g.r, g.θ]; rθ = map(p, g); rs = first.(rθ)[:,1]; θs = last.(rθ)[1,:]
+        # Compute values of the solution on the grid
+        Uu = (F[θs,1:n+2]*(T[rs,1:n+2]*X)')'
+        return collect_errors(Uu, θs, rs, ua, errors)
+    elseif length(TFρ) == 4
+        (T, Tₐ, F, ρ) = TFρ
+        n = (size(X,1)-2)÷2
+        Z = Zernike(0,0)
+        Zₐ = ZernikeAnnulus(ρ,0,0)
+        
+        p = g -> [g.r, g.θ];
+        g = AlgebraicCurveOrthogonalPolynomials.grid(Z, Block(n))
+        gₐ = AlgebraicCurveOrthogonalPolynomials.grid(Zₐ, Block(n))
+        rθ = map(p, g); rs = ρ.*first.(rθ)[:,1]; θs = last.(rθ)[1,:]
+        rθₐ = map(p, gₐ); rsₐ = first.(rθₐ)[:,1]; θsₐ = last.(rθₐ)[1,:]
+    
+        Uu = (F[θs,1:n+1]*(T[rs,1:n+1]*X[n+2:end,1:n+1])')'
+        Uuₐ = (F[θsₐ,1:n+1]*(Tₐ[rsₐ,1:n+1]*X[1:n+1,1:n+1])')'
+        
+        return collect_errors(Uu, Uuₐ, θs, rs, rsₐ, ua, errors)
+    else
+        error("Collect error not implemented for these arguments.")
+    end
+
+end
 # function collect_errors2(y, ua, errors=[])
 #     Z, c = y.args
 #     if Z isa Weighted

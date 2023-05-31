@@ -39,10 +39,11 @@ end
 # one-dimensional solves per Fourier mode with decreasing size. This is adapted for
 # the spectral element method and also implements a tau-method for continuity
 # across the disk and annulus cell.
-function helmholtz_modal_solve(f::Vector, b::Int, ρ::T, Δ::Vector{ModalInterlace}, L::Vector{ModalInterlace}=[], λ::T=[], mmode=1:b, w::Function=(x,m)->r^m) where T
-    Δs = Δ.ops
-    Ls = L.ops
+function helmholtz_modal_solve(Z::Vector{MultivariateOrthogonalPolynomial{2, T}}, f::Vector, b::Int, Δ::Vector, L::Vector=[], λs::AbstractVector=[], mmode=1:b, w::Function=(r,m)->r^m) where T
+    Δs = [Δ[i].ops for i in 1:2]
+    Ls = [L[i].ops for i in 1:2]
     
+    ρ = Z[1].ρ
     P = SemiclassicalJacobi.(inv(one(T)-ρ^2), Z[1].b, Z[1].a, 0:b-1)
 
     fs = [ModalTrav(f[j]).matrix for j in 1:2]
@@ -81,10 +82,16 @@ function helmholtz_modal_solve(f::Vector, b::Int, ρ::T, Δ::Vector{ModalInterla
         A[2,1:end-1] = [cρ' -zs[1:m+1,2j-1]']    # Dirichlet element continuity
         A[3,1:end-1] = [dcρ' -dzs[1:m+1,2j-1]']  # Neumann element continuity
         
-        A[4:m+3,1:m+1] = Δs[1][j][1:m,1:m+1]
-        # Do not forget inv(ρ^2) factor! To do with rescaling the Zernike polys
-        A[m+4:end,m+2:end-1] = inv(ρ^2)*Δs[2][j][1:m,1:m+1]
-        
+        if !iszero(λs)
+            A[4:m+3,1:m+1] = Δs[1][j][1:m,1:m+1] + λs[1]*Ls[1][j][1:m,1:m+1]
+            # Do not forget inv(ρ^2) factor! To do with rescaling the Zernike polys
+            A[m+4:end,m+2:end-1] = inv(ρ^2)*Δs[2][j][1:m,1:m+1] + λs[2]*Ls[2][j][1:m,1:m+1]
+        else    
+            A[4:m+3,1:m+1] = Δs[1][j][1:m,1:m+1]
+            # Do not forget inv(ρ^2) factor! To do with rescaling the Zernike polys
+            A[m+4:end,m+2:end-1] = inv(ρ^2)*Δs[2][j][1:m,1:m+1]
+        end
+
         A[2, end] = 1-exp(-j)
         A[m+3,end] = 1. # tau-method stabilisation
 
@@ -199,6 +206,51 @@ function chebyshev_fourier_helmholtz_modal_solve(TF, LMR, rhs_xy::Function, n::I
     end
 
     return (X, Fs)
+end
+
+function chebyshev_fourier_helmholtz_modal_solve(TF, LMR, Ds, rhs_xy::Function, n::Int, λs::Vector=[])
+
+    (T, Tₐ, F) = TF
+    (L, Lₐ, M, Mₐ, R, Rₐ) = LMR
+    (D, Dₐ) = Ds
+    
+    𝐫,𝛉 = ClassicalOrthogonalPolynomials.grid(T, n),ClassicalOrthogonalPolynomials.grid(F, n)
+    PT,PF = plan_transform(T, (n,n), 1),plan_transform(F, (n,n), 2)
+    𝐫ₐ = ClassicalOrthogonalPolynomials.grid(Tₐ, n)
+    PTₐ = plan_transform(T, (n,n), 1)
+
+    𝐱 = 𝐫 .* cos.(𝛉')
+    𝐲 = 𝐫 .* sin.(𝛉')
+    Fs = PT * (PF * rhs_xy.(𝐱, 𝐲))
+
+    𝐱ₐ = 𝐫ₐ .* cos.(𝛉')
+    𝐲ₐ = 𝐫ₐ .* sin.(𝛉')
+    Fsₐ = PTₐ * (PF * rhs_xy.(𝐱ₐ, 𝐲ₐ))
+
+    X = zeros(2n+2, n+1)
+    A = zeros(2n+3, 2n+3)
+    # multiply RHS by r^2 and convert to C
+    S = (R^2*M)[1:n,1:n]
+    Sₐ = (Rₐ^2*Mₐ)[1:n,1:n]
+
+    for j = 1:n
+        m = j ÷ 2
+        Δₘ = L - m^2*M + λs[2] * R^2*M
+        Δₘₐ = Lₐ - m^2*Mₐ + λs[1] * Rₐ^2*Mₐ
+
+        A[1,1:n+1] = Tₐ[[end],1:n+1] # BCs
+        A[2, 1:end-1] = [Tₐ[[begin],:][1:n+1]; - T[[end],:][1:n+1]]'
+        A[3, 1:end-1] = [(Dₐ*Tₐ)[[begin],:][1:n+1]; -(D*T)[[end],:][1:n+1]]'
+        A[4:n+3,1:n+1] = Δₘₐ[1:n,1:n+1] 
+        A[n+4:end,n+2:end-1] = Δₘ[1:n,1:n+1]
+        
+        A[n+3,end] = 1. # tau-method stabilisation
+
+        𝐛 = [0;0;0; Sₐ*Fsₐ[:,j]; S*Fs[:,j]]
+        X[:,j] = (A \ 𝐛)[1:end-1]
+    end
+
+    return (X, Fsₐ, Fs)
 end
 
 # This function splits the Helmholtz solve via Two-band-Fourier into a series of

@@ -2,7 +2,8 @@ module AnnuliPDEs
 
 using AlgebraicCurveOrthogonalPolynomials, ClassicalOrthogonalPolynomials, 
     MultivariateOrthogonalPolynomials, LinearAlgebra,
-    SemiclassicalOrthogonalPolynomials, DelimitedFiles, LaTeXStrings, PyPlot, BlockArrays
+    SemiclassicalOrthogonalPolynomials, DelimitedFiles, LaTeXStrings, PyPlot, 
+    BlockArrays, StaticArrays
 
 import AlgebraicCurveOrthogonalPolynomials: Laplacian, unweighted, blockcolsupport, ZernikeAnnulusITransform, OneTo, weight
 import ForwardDiff: derivative

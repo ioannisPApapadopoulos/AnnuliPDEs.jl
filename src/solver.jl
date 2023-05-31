@@ -4,7 +4,7 @@ Solver routines
 
 # This function splits the Helmholtz solve via Zernike (annular) polys into a series of
 # one-dimensional solves per Fourier mode with decreasing size.
-function modal_solve(f::BlockVector, b::Int, Δ::MultivariateOrthogonalPolynomials.ModalInterlace, L::MultivariateOrthogonalPolynomials.ModalInterlace=[], λ::T=0.0, mmode=2:b) where T   
+function helmholtz_modal_solve(f::BlockVector, b::Int, Δ::MultivariateOrthogonalPolynomials.ModalInterlace, L::MultivariateOrthogonalPolynomials.ModalInterlace, λ::T=0.0, mmode=2:b) where T 
     Δs = Δ.ops
     Ls = L.ops
     
@@ -31,7 +31,7 @@ end
 # one-dimensional solves per Fourier mode with decreasing size. This is adapted for
 # the spectral element method and also implements a tau-method for continuity
 # across the disk and annulus cell.
-function modal_solve(f::Vector, b::Int, ρ::T, Δ::Vector{ModalInterlace}, L::Vector{ModalInterlace}=[], λ::T=[], mmode=1:b, w::Function=(x,m)->r^m) where T  
+function helmholtz_modal_solve(f::Vector, b::Int, ρ::T, Δ::Vector{ModalInterlace}, L::Vector{ModalInterlace}=[], λ::T=[], mmode=1:b, w::Function=(x,m)->r^m) where T
     Δs = Δ.ops
     Ls = L.ops
     
@@ -167,7 +167,10 @@ end
 
 # This function splits the Helmholtz solve via Chebyshev-Fourier into a series of
 # one-dimensional solves per Fourier mode.
-function chebyshev_fourier_modal_solve(T, F, L, M, R, rhs_xy::Function, n::Int, λ::V=0.0) where V   
+function chebyshev_fourier_helmholtz_modal_solve(TF, LMR, rhs_xy::Function, n::Int, λ::V=0.0) where V  
+
+    (T, F) = TF
+    (L, M, R) = LMR
 
     𝐫,𝛉 = ClassicalOrthogonalPolynomials.grid(T, n),ClassicalOrthogonalPolynomials.grid(F, n)
     PT, PF = plan_transform(T, (n,n), 1), plan_transform(F, (n,n), 2)
@@ -187,5 +190,33 @@ function chebyshev_fourier_modal_solve(T, F, L, M, R, rhs_xy::Function, n::Int, 
         X[:,j] = [T[[begin,end],:]; Δₘ][1:n+2,1:n+2] \ [0; 0; S*Fs[:,j]]
     end
 
-    return X
+    return (X, Fs)
+end
+
+# This function splits the Helmholtz solve via Two-band-Fourier into a series of
+# one-dimensional solves per Fourier mode.
+function twoband_fourier_helmholtz_modal_solve(UF, ΔLMR, rhs_xy::Function, n::Int, λ::V=0.0) where V
+
+    (U, F) = UF
+    (Δᵣ, L, M, R) = ΔLMR
+
+    𝐫,𝛉 = ClassicalOrthogonalPolynomials.grid(U, n),ClassicalOrthogonalPolynomials.grid(F, n)
+    PU, PF = plan_transform(U, (n,n), 1), plan_transform(F, (n,n), 2)
+
+    𝐱 = 𝐫 .* cos.(𝛉')
+    𝐲 = 𝐫 .* sin.(𝛉')
+
+    Fs = PU * (PF * rhs_xy.(𝐱, 𝐲))
+
+    X = zeros(n, n)
+    # multiply RHS by r^2 and convert to C
+    R² = (R*R*L)[1:n, 1:n]
+
+    for j = 1:n
+        m = j ÷ 2
+        Δₘ = Δᵣ - m^2*M + λ*R*R*M^2*M
+        X[:,j] = Δₘ[1:n,1:n] \ (R² * Fs[:,j])
+    end
+
+    return (X, Fs)
 end

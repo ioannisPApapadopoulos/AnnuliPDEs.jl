@@ -2,16 +2,16 @@
 Helper functions for computing the solutions errors
 """
 
-function collect_errors(wZ::Weighted{T, ZernikeAnnulus{T}}, u::PseudoBlockVector, ua::Function, errors=[]) where T
+function collect_errors(Z::Weighted{T, ZernikeAnnulus{T}}, u::PseudoBlockVector, ua::Function, errors=[]) where T
 
-    w = weight(wZ)
+    w = weight(Z)
     (a, b, ρ) = unweighted(Z).a, unweighted(Z).b, unweighted(Z).ρ 
 
     N = 2*size((ModalTrav(u).matrix),1)-1
     g = AlgebraicCurveOrthogonalPolynomials.grid(Z, Block(N))
 
     F = ZernikeAnnulusITransform{T}(N, a, b, 0, ρ) # 0 should be Z.c if implemented.
-    vals = F * c[Block.(OneTo(N))] # transform to grid
+    vals = F * u # transform to grid
 
     vals = w[g].*vals
 
@@ -74,6 +74,19 @@ function collect_errors(U::Adjoint{T, Matrix{T}}, 𝛉::AbstractArray, 𝐫::Abs
     
     append!(errors, norm(Ua-U, ∞))
     return errors
+end
+
+function collect_errors(TFρ::Tuple, X::AbstractMatrix, ua::Function, errors=[])
+
+    (T, F, ρ) = TFρ
+    n = size(X,1)-2
+    Z = ZernikeAnnulus(ρ,1,1)
+    g = AlgebraicCurveOrthogonalPolynomials.grid(Z, Block(n))
+    p = g -> [g.r, g.θ]; rθ = map(p, g); rs = first.(rθ)[:,1]; θs = last.(rθ)[1,:]
+    # Compute values of the solution on the grid
+    Uu = (F[θs,1:n+2]*(T[rs,1:n+2]*X)')'
+    collect_errors(Uu, θs, rs, ua, errors)
+
 end
 
 # function collect_errors2(y, ua, errors=[])

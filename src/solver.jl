@@ -4,7 +4,7 @@ Solver routines
 
 # This function splits the Helmholtz solve via Zernike (annular) polys into a series of
 # one-dimensional solves per Fourier mode with decreasing size.
-function helmholtz_modal_solve(f::BlockVector, b::Int, Δ::MultivariateOrthogonalPolynomials.ModalInterlace, L::MultivariateOrthogonalPolynomials.ModalInterlace, λ::T=0.0, mmode=1:b) where T 
+function helmholtz_modal_solve(f::AbstractBlockArray, b::Int, Δ::MultivariateOrthogonalPolynomials.ModalInterlace, L::MultivariateOrthogonalPolynomials.ModalInterlace, λ::T=0.0, mmode=1:b) where T 
     Δs = Δ.ops
     Ls = L.ops
     
@@ -15,7 +15,7 @@ function helmholtz_modal_solve(f::BlockVector, b::Int, Δ::MultivariateOrthogona
     
     for j in mmode
         M = length(j:2:b)
-        if λ != 0
+        if !iszero(λ)
             if j == 1
                 us[1:M,1] = (Δs[1]+λ*Ls[1])[1:M,1:M] \ fs[1:M,1]
             else

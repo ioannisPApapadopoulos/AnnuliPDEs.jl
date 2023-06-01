@@ -2,15 +2,22 @@
 Helper functions for computing the solutions errors
 """
 
-function collect_errors(Z::Weighted{T, ZernikeAnnulus{T}}, u::PseudoBlockVector, ua::Function, errors=[]) where T
+function collect_errors(Z::Weighted{T, <:MultivariateOrthogonalPolynomial}, u::PseudoBlockVector, ua::Function, errors=[]) where T
 
+    @assert Z.P isa ZernikeAnnulus || Z.P isa Zernike
     w = weight(Z)
-    (a, b, ρ) = unweighted(Z).a, unweighted(Z).b, unweighted(Z).ρ 
+    (a, b) = unweighted(Z).a, unweighted(Z).b
 
     N = 2*size((ModalTrav(u).matrix),1)-1
     g = AlgebraicCurveOrthogonalPolynomials.grid(Z, Block(N))
 
-    F = ZernikeAnnulusITransform{T}(N, a, b, 0, ρ) # 0 should be Z.c if implemented.
+    if Z.P isa ZernikeAnnulus
+        ρ = unweighted(Z).ρ 
+        F = ZernikeAnnulusITransform{T}(N, a, b, 0, ρ) # 0 should be Z.c if implemented.
+    else
+        F = ZernikeITransform{T}(N, a, b)
+    end
+
     vals = F * u # transform to grid
 
     vals = w[g].*vals

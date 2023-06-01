@@ -89,7 +89,6 @@ for n in 11:10:111
 
     collect_errors((T,Tₐ,F,ρ), X, ua, errors_TF)
 end
-errors_TF
 
 ###
 # Spectral element Zernike discretisation

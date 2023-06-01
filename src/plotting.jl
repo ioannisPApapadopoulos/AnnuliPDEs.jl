@@ -1,6 +1,8 @@
 """
 Helper functions for plotting the functions on the annulus
 """
+
+# Plotting routine for a one-cell weighted Zernike annular basis
 function plot_solution(Z::Weighted{T, ZernikeAnnulus{T}}, u::PseudoBlockVector, ua=[]) where T
     w = weight(Z)
     (a, b, ρ) = unweighted(Z).a, unweighted(Z).b, unweighted(Z).ρ
@@ -43,17 +45,14 @@ function plot_solution(Z::Weighted{T, ZernikeAnnulus{T}}, u::PseudoBlockVector, 
     display(gcf())
 end
 
-
+# Plotting routine for a two-cell Zernike + Zernike annular basis
 function plot_solution(Z::Vector{MultivariateOrthogonalPolynomial{2,T}}, u::Tuple{ModalTrav{T, Matrix{T}}, ModalTrav{T, Matrix{T}}}) where T
 
+    @assert Z[1] isa ZernikeAnnulus && Z[2] isa Zernike
+
     # Extract parameters
+    (α, β, ρ) = Z[1].a, Z[1].b, Z[1].ρ
     (a, b) = Z[2].a, Z[2].b
-    if Z[1] isa Weighted
-        (α, β, ρ) = Z[1].P.a, Z[1].P.b, Z[1].P.ρ 
-        w = weight(Z[1])
-    else
-        (α, β, ρ) = Z[1].a, Z[1].b, Z[1].ρ 
-    end
     
     # Synthesis operators
     N = 2*size((ModalTrav(u[1]).matrix),1)-1
@@ -70,11 +69,6 @@ function plot_solution(Z::Vector{MultivariateOrthogonalPolynomial{2,T}}, u::Tupl
         AlgebraicCurveOrthogonalPolynomials.grid(Z[1], Block(N)), 
         AlgebraicCurveOrthogonalPolynomials.grid(Z[2], Block(N))
     ]
-
-    # ammend if weighted
-    if Z[1] isa Weighted
-        vals[1] = w[g[1]].*vals[1]
-    end
 
     # Use PyPlot to produce nice plots
     p = g -> [g.r, g.θ]

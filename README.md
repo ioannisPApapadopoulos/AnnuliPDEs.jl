@@ -15,3 +15,6 @@ We numerically approximate the solution to a number of Poisson and Helmholtz equ
 |9b/c|discontinuous-coefficients-data/[discontinuous-data-variable-helmholtz.jl](https://github.com/ioannisPApapadopoulos/AnnuliPDEs.jl/blob/main/examples/discontinuous-coefficients-data/discontinuous-data-variable-helmholtz.jl)|
 |10a|discontinuous-coefficients-data/[discontinuous-data-poisson.jl](https://github.com/ioannisPApapadopoulos/AnnuliPDEs.jl/blob/main/examples/discontinuous-coefficients-data/discontinuous-data-poisson.jl)|
 |10b|discontinuous-coefficients-data/[discontinuous-data-variable-helmholtz.jl](https://github.com/ioannisPApapadopoulos/AnnuliPDEs.jl/blob/main/examples/discontinuous-coefficients-data/discontinuous-data-variable-helmholtz.jl)|
+
+## Contact
+Ioannis Papadopoulos: ioannis.papadopoulos13@imperial.ac.uk

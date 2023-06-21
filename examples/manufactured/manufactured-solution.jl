@@ -107,7 +107,7 @@ end
 
 # Plot the solution
 plot_solution(wZ, u)
-PyPlot.savefig("manafacture-solution.pdf")
+PyPlot.savefig("manafactured-solution.pdf")
 
 ###
 # Convergence plot

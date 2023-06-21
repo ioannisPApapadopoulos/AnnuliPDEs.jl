@@ -33,6 +33,8 @@ function plot_solution(Z::Weighted{T, ZernikeAnnulus{T}}, u::PseudoBlockVector, 
     θ = [θ; 2π]
     vals = hcat(vals, vals[:,1])
 
+    # pl = Plots.heatmap(θ, r[end:-1:1], vals[end:-1:1,:], proj=:polar, limits=(0,1))
+
     PyPlot.rc("font", family="serif", size=14)
     rcParams = PyPlot.PyDict(PyPlot.matplotlib["rcParams"])
     rcParams["text.usetex"] = true

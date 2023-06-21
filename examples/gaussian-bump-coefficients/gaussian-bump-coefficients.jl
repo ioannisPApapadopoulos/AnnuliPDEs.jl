@@ -162,7 +162,7 @@ Plots.plot!(0:n-1, [coeff_TF_f[1] coeff_TF_f[2]],
     ylabel=L"$l^\infty\mathrm{-norm}$",
     xlabel=L"$k$",
 )
-Plots.savefig("examples/figs/gaussian-bump-coefficient-f.pdf")
+Plots.savefig("gaussian-bump-coefficient-f.pdf")
 
 
 # Solution coefficients
@@ -194,4 +194,4 @@ Plots.plot!(0:n-1, [coeff_TF_u[1] coeff_TF_u[2]],
     ylabel=L"$l^\infty\mathrm{-norm}$",
     xlabel=L"$k$",
 )
-Plots.savefig("examples/figs/gaussian-bump-coefficient-u.pdf")
+Plots.savefig("gaussian-bump-coefficient-u.pdf")

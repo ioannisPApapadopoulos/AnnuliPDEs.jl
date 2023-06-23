@@ -114,7 +114,7 @@ PyPlot.savefig("manafactured-solution.pdf")
 ###
 bs = [sum(1:10*b) for b in 1:length(errors_Z)]
 Plots.plot(bs, errors_Z,
-    label=L"$\mathrm{Generalised \,\, Zernike \,\, annular}$",
+    label=L"$\mathrm{Zernike \,\, annular}$",
     linewidth=2,
     markershape=:circle,
     markersize=5)

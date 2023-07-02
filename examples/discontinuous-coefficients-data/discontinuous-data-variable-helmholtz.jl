@@ -152,7 +152,7 @@ Plots.plot(ns, errors_Z,
     color=3
 )
 
-tfns = [2b*(b+1) for b in 11:10:111]
+tfns = [2b*(2b+2) for b in 11:10:111]
 Plots.plot!(tfns, errors_TF,
     label=L"\mathrm{Chebyshev} \otimes \mathrm{Fourier \,\, (2 \,\, elements)}",
     linewidth=2,

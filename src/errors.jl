@@ -125,7 +125,7 @@ function collect_errors(TFρ::Tuple, X::AbstractMatrix, ua::Function, errors=[])
         g = AlgebraicCurveOrthogonalPolynomials.grid(Z, Block(n))
         p = g -> [g.r, g.θ]; rθ = map(p, g); rs = first.(rθ)[:,1]; θs = last.(rθ)[1,:]
         # Compute values of the solution on the grid
-        Uu = (F[θs,1:n+2]*(T[rs,1:n+2]*X)')' # Directly expand the tensor-proudct basis on the grid
+        Uu = (F[θs,1:2n]*(T[rs,1:n+2]*X)')' # Directly expand the tensor-product basis on the grid
         return _collect_errors(Uu, θs, rs, ua, errors)
     # Two cell routine
     elseif length(TFρ) == 4
@@ -147,8 +147,8 @@ function collect_errors(TFρ::Tuple, X::AbstractMatrix, ua::Function, errors=[])
         rθ = map(p, g); rs = ρ.*first.(rθ)[:,1]; θs = last.(rθ)[1,:]
         rθₐ = map(p, gₐ); rsₐ = first.(rθₐ)[:,1]; θsₐ = last.(rθₐ)[1,:]
     
-        Uu = (F[θs,1:n+1]*(T[rs,1:n+1]*X[n+2:end,1:n+1])')'
-        Uuₐ = (F[θsₐ,1:n+1]*(Tₐ[rsₐ,1:n+1]*X[1:n+1,1:n+1])')'
+        Uu = (F[θs,1:2n]*(T[rs,1:n+1]*X[n+2:end,1:2n])')'
+        Uuₐ = (F[θsₐ,1:2n]*(Tₐ[rsₐ,1:n+1]*X[1:n+1,1:2n])')'
         
         return _collect_errors(Uu, Uuₐ, θs, rs, rsₐ, ua, errors)
     else

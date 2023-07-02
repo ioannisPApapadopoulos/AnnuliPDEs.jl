@@ -119,8 +119,8 @@ Plots.plot!(ns, errors_TBF,
     markersize=5,
 )
 
-ns = [n*(n+2) for n = 10:10:250]
-Plots.plot!(ns, errors_TF,
+ns = [2n*(n+2) for n = 10:10:250]
+Plots.plot!(ns[1:12], errors_TF[1:12],
     label=L"$\mathrm{Chebyshev}(r_\rho) \otimes \mathrm{Fourier}$",
     linewidth=2,
     markershape=:dtriangle,

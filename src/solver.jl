@@ -131,8 +131,8 @@ function chebyshev_fourier_helmholtz_modal_solve(TF, LMR, rhs_xy::Function, n::I
     # M = I : ChebyshevT -> Ultraspherical(2)
     # R = r : Ultraspherical(2) -> Ultraspherical(2)
 
-    𝐫,𝛉 = ClassicalOrthogonalPolynomials.grid(T, n),ClassicalOrthogonalPolynomials.grid(F, n)
-    PT, PF = plan_transform(T, (n,n), 1), plan_transform(F, (n,n), 2)
+    𝐫,𝛉 = ClassicalOrthogonalPolynomials.grid(T, 2n),ClassicalOrthogonalPolynomials.grid(F, 2n)
+    PT, PF = plan_transform(T, (2n,2n), 1), plan_transform(F, (2n,2n), 2)
 
     𝐱 = 𝐫 .* cos.(𝛉')
     𝐲 = 𝐫 .* sin.(𝛉')
@@ -141,15 +141,15 @@ function chebyshev_fourier_helmholtz_modal_solve(TF, LMR, rhs_xy::Function, n::I
     Fs = PT * (PF * rhs_xy.(𝐱, 𝐲))
 
     # Preallocate space for the coefficients of the solution
-    X = zeros(n+2, n+2)
+    X = zeros(n+2, 2n)
     # multiply RHS by r^2 and convert to C
     S = (R^2*M)[1:n,1:n]
 
-    for j = 1:n
+    for j = 1:2n-1
         m = j ÷ 2
         # Add in Fourier part of Laplacian + Helmholtz part
         Δₘ = L - m^2*M + λ*R^2*M
-        X[:,j] = [T[[begin,end],:]; Δₘ][1:n+2,1:n+2] \ [0; 0; S*Fs[:,j]]
+        X[:,j] = [T[[begin,end],:]; Δₘ][1:n+2,1:n+2] \ [0; 0; S*Fs[1:n,j]]
     end
 
     return (X, Fs)
@@ -174,10 +174,10 @@ function chebyshev_fourier_helmholtz_modal_solve(TF, LMR, Ds, rhs_xy::Function, 
     @assert D isa Derivative
     @assert Dₐ isa Derivative
     
-    𝐫,𝛉 = ClassicalOrthogonalPolynomials.grid(T, n),ClassicalOrthogonalPolynomials.grid(F, n)
-    PT,PF = plan_transform(T, (n,n), 1),plan_transform(F, (n,n), 2)
-    𝐫ₐ = ClassicalOrthogonalPolynomials.grid(Tₐ, n)
-    PTₐ = plan_transform(T, (n,n), 1)
+    𝐫,𝛉 = ClassicalOrthogonalPolynomials.grid(T, 2n),ClassicalOrthogonalPolynomials.grid(F, 2n)
+    PT,PF = plan_transform(T, (2n,2n), 1),plan_transform(F, (2n,2n), 2)
+    𝐫ₐ = ClassicalOrthogonalPolynomials.grid(Tₐ, 2n)
+    PTₐ = plan_transform(T, (2n,2n), 1)
 
     # Coefficients for the disk cell
     𝐱 = 𝐫 .* cos.(𝛉')
@@ -189,13 +189,13 @@ function chebyshev_fourier_helmholtz_modal_solve(TF, LMR, Ds, rhs_xy::Function, 
     𝐲ₐ = 𝐫ₐ .* sin.(𝛉')
     Fsₐ = PTₐ * (PF * rhs_xy.(𝐱ₐ, 𝐲ₐ))
 
-    X = zeros(2n+2, n+1)
+    X = zeros(2n+2, 2n)
     A = zeros(2n+3, 2n+3)
     # multiply RHS by r^2 and convert to C
     S = (R^2*M)[1:n,1:n]
     Sₐ = (Rₐ^2*Mₐ)[1:n,1:n]
 
-    for j = 1:n
+    for j = 1:2n-1
         # Form matrix to be solved
         m = j ÷ 2
         Δₘ = L - m^2*M + λs[2] * R^2*M
@@ -214,7 +214,7 @@ function chebyshev_fourier_helmholtz_modal_solve(TF, LMR, Ds, rhs_xy::Function, 
         
         A[n+3,end] = 1. # tau-method stabilisation
 
-        𝐛 = [0;0;0; Sₐ*Fsₐ[:,j]; S*Fs[:,j]]
+        𝐛 = [0;0;0; Sₐ*Fsₐ[1:n,j]; S*Fs[1:n,j]]
         X[:,j] = (A \ 𝐛)[1:end-1]
     end
 

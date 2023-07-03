@@ -2,7 +2,7 @@ using AnnuliPDEs, ClassicalOrthogonalPolynomials, AlgebraicCurveOrthogonalPolyno
 using PyPlot, Plots, LaTeXStrings
 
 """
-This script implements the "Manufactured solution" example (section 7.4).
+This script implements the "Manufactured solution" example (section 7.3).
 
 We are solving Δu(x,y) = f(x,y)
 
@@ -59,26 +59,26 @@ errors_TF
 ###
 # Two-band-Fourier series discretisation
 ###
-T,U,C,F = HalfWeighted{:ab}(TwoBandJacobi(ρ,1,1,0)),TwoBandJacobi(ρ,0,0,0),TwoBandJacobi(ρ,1,1,0),Fourier()
-r = axes(T,1)
-D = Derivative(r)
-R = jacobimatrix(C) # mult by r
-r∂ = R * (C \ (D*T)) # r*∂
-∂² = (C \ (D^2 * T))
-r²∂² = R * R * ∂²
-Δᵣ = r²∂² + r∂
-L = C \ U
-M = L*(U \ T) # Identity
+# T,U,C,F = HalfWeighted{:ab}(TwoBandJacobi(ρ,1,1,0)),TwoBandJacobi(ρ,0,0,0),TwoBandJacobi(ρ,1,1,0),Fourier()
+# r = axes(T,1)
+# D = Derivative(r)
+# R = jacobimatrix(C) # mult by r
+# r∂ = R * (C \ (D*T)) # r*∂
+# ∂² = (C \ (D^2 * T))
+# r²∂² = R * R * ∂²
+# Δᵣ = r²∂² + r∂
+# L = C \ U
+# M = L*(U \ T) # Identity
 
-errors_TBF = []
-for n in 10:10:320
-    # Compute coefficients of solution to Helmholtz problem with Chebyshev-Fourier series
-    X, _ = twoband_fourier_helmholtz_modal_solve((U, F), (Δᵣ, L, M, R), rhs_xy, n, 0.0) 
-    print("Computed coefficients for n=$n \n")
+# errors_TBF = []
+# for n in 10:10:320
+#     # Compute coefficients of solution to Helmholtz problem with Chebyshev-Fourier series
+#     X, _ = twoband_fourier_helmholtz_modal_solve((U, F), (Δᵣ, L, M, R), rhs_xy, n, 0.0) 
+#     print("Computed coefficients for n=$n \n")
 
-    collect_errors((T,F,ρ), X, ua, errors_TBF)
-end
-errors_TBF
+#     collect_errors((T,F,ρ), X, ua, errors_TBF)
+# end
+# errors_TBF
 
 ###
 # Zernike annular discretisation
@@ -119,15 +119,15 @@ Plots.plot(bs, errors_Z,
     markershape=:circle,
     markersize=5)
 
-ns = [n^2/2 for n in 10:10:320]
-Plots.plot!(bs, errors_TBF,
-    label=L"$\mathrm{Two}$-$\mathrm{band} \otimes \mathrm{Fourier}$",
-    linewidth=2,
-    markershape=:dtriangle,
-    markersize=5)
+# ns = [n^2/2 for n in 10:10:320]
+# Plots.plot!(bs, errors_TBF,
+#     label=L"$\mathrm{Two}$-$\mathrm{band} \otimes \mathrm{Fourier}$",
+#     linewidth=2,
+#     markershape=:dtriangle,
+#     markersize=5)
 
-ns = [2n*(n+2) for n in 10:10:320]
-Plots.plot!(ns, errors_TF,
+ns = [(n+2)*(2n-1) for n in 10:10:320]
+Plots.plot!(ns[1:20], errors_TF[1:20],
     label=L"$\mathrm{Chebyshev}(r_\rho)\otimes\mathrm{Fourier}$",
     linewidth=2,
     markershape=:diamond,

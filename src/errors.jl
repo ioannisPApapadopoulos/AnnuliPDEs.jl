@@ -71,6 +71,7 @@ function collect_errors(Z::Vector{MultivariateOrthogonalPolynomial{2,T}}, u::Tup
     U = map(ua, R, Θ)
     
     append!(errors, [max(norm(Uₐ-valsₐ, ∞), norm(U-vals, ∞))])
+    # append!(errors, [(norm(Uₐ-valsₐ, ∞), norm(U-vals, ∞))])
     return errors
 end
 

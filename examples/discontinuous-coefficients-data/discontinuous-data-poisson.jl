@@ -4,7 +4,7 @@ using PyPlot, Plots, LaTeXStrings
 """
 This script implements the Poisson example of
 
-"Discontinuous variable coefficients and data" (section 7.5).
+"Discontinuous variable coefficients and data" (section 7.4).
 
 We are solving Δ u(x,y) = exp(−a((x−b)²+(y−c)²)) * (−4a * (−a(b² − 2bx + c² − 2cy + x² + y²) + 1)))
 on a disk.
@@ -21,7 +21,11 @@ inradius at r=1/2. This performs particularly well.
 # Exact solution
 
 # Gaussian bump
-c = [-20 0 ρ]
+θs = [0, π/2, π/3, 5π/4]
+c = zeros(length(θs)+1,3)
+for i in 1:lastindex(θs) c[i,:] = [-10*i ρ*cos(θs[i]) ρ*sin(θs[i])] end
+c[end,:] = [-50 0.9*cos(3π/4) 0.9*sin(3π/4)]
+
 function gbump(r, θ)
     x = r*cos(θ); y = r*sin(θ)
     s = 0;
@@ -150,7 +154,7 @@ y = [yₐ, y];
 errors_Z_2 = []
 u = []
 f = []
-for n in 11:10:111
+for n in 11:10:151
     f = []
     # Expand RHS in Zernike annular polynomials for annulus element
     append!(f,[Zd[1][:, Block.(1:n)] \ rhs_xy.(x[1], y[1])])
@@ -187,7 +191,7 @@ Plots.plot(ns, errors_Z,
     markersize=5,
 )
 
-tfns = [b*(b+1) for b in 11:10:231]
+tfns = [(2b-1)*(b+2) for b in 11:10:231]
 Plots.plot!(tfns, errors_TF,
     label=L"\mathrm{Chebyshev}\otimes \mathrm{Fourier\,\, (1 \,\, element)}",
     linewidth=2,
@@ -195,7 +199,7 @@ Plots.plot!(tfns, errors_TF,
     markersize=5,
 )
 
-ns = [2*sum(1:b) for b in 11:10:111]
+ns = [2*sum(1:b) for b in 11:10:151]
 Plots.plot!(ns, errors_Z_2,
     label=L"\mathrm{Zernike/Zernike \,\, annular \,\, (2 \,\,elements)}",
     linewidth=2,
@@ -203,7 +207,7 @@ Plots.plot!(ns, errors_Z_2,
     markersize=5,
 )
 
-tfns = [2b*(b+1) for b in 11:10:111]
+tfns = [(2b-1)*(2b+2) for b in 11:10:111]
 Plots.plot!(tfns, errors_TF_2,
     label=L"\mathrm{Chebyshev} \otimes \mathrm{Fourier \,\, (2 \,\, elements)}",
     linewidth=2,
@@ -214,7 +218,7 @@ Plots.plot!(tfns, errors_TF_2,
     xlabel=L"$\# \mathrm{Basis \; functions}$",
     ylim=[1e-15, 5e0],
     xlim = [0, 6.3e4],
-    legend=:bottomright,
+    legend=:right,
     xtickfontsize=10, ytickfontsize=10,xlabelfontsize=15,ylabelfontsize=15,
     yscale=:log10,
     yticks=[1e-15, 1e-10, 1e-5, 1e0]

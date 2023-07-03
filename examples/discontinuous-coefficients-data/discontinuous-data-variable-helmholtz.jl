@@ -4,7 +4,7 @@ using PyPlot, Plots, LaTeXStrings
 """
 This script implements the Helmholtz example of
 
-"Discontinuous variable coefficients and data" (section 7.5).
+"Discontinuous variable coefficients and data" (section 7.4).
 
 We are solving (Δ+κ(r)) u(x,y) = exp(−a((x−b)²+(y−c)²)) * (−4a * (−a(b² − 2bx + c² − 2cy + x² + y²) + 1)) + κ(r))
 on a disk.
@@ -19,11 +19,15 @@ inradius at r=1/2. This performs particularly well.
 
 """
 
-ρ = 0.5; κ₀ = 1e2; κ₁ = 1e0; 
+ρ = 0.5; κ₀ = 1e2; κ₁ = 1e0;
 # Exact solution
 
 # Gaussian bump
-c = [-20 0 ρ]
+θs = [0, π/2, π/3, 5π/4]
+c = zeros(length(θs)+1,3)
+for i in 1:lastindex(θs) c[i,:] = [-10*i ρ*cos(θs[i]) ρ*sin(θs[i])] end
+c[end,:] = [-50 0.9*cos(3π/4) 0.9*sin(3π/4)]
+
 function gbump(r, θ)
     x = r*cos(θ); y = r*sin(θ)
     s = 0;
@@ -112,7 +116,7 @@ y = [yₐ, y];
 errors_Z = []
 u = []
 f = []
-for n in 11:10:111
+for n in 11:10:151
     f = []
     # Expand RHS in Zernike annular polynomials for annulus element
     append!(f,[Zd[1][:, Block.(1:n)] \ rhs_xy.(x[1], y[1])])
@@ -141,7 +145,7 @@ PyPlot.savefig("spectral-element-u.pdf")
 # Convergence plot
 ###
 
-ns = [2*sum(1:10*b) for b in 1:length(errors_Z)]
+ns = [2*sum(1:b) for b in 11:10:151]
 Plots.plot(ns, errors_Z,
     label=L"\mathrm{Zernike/Zernike \,\, annular \,\, (2 \,\,elements)}",
     ylabel=L"$\infty\mathrm{-norm \;\; error}$",
@@ -152,7 +156,7 @@ Plots.plot(ns, errors_Z,
     color=3
 )
 
-tfns = [2b*(2b+2) for b in 11:10:111]
+tfns = [(2n-1)*(2n+2) for n in 11:10:111]
 Plots.plot!(tfns, errors_TF,
     label=L"\mathrm{Chebyshev} \otimes \mathrm{Fourier \,\, (2 \,\, elements)}",
     linewidth=2,
@@ -162,10 +166,12 @@ Plots.plot!(tfns, errors_TF,
     ylabel=L"$l^\infty\mathrm{-norm \;\; error}$",
     xlabel=L"$\# \mathrm{Basis \; functions}$",
     ylim=[1e-15, 1e2],
-    xlim = [0, 2.8e4],
+    xlim = [0, 5.3e4],
     legend=:topright,
     xtickfontsize=10, ytickfontsize=10,xlabelfontsize=15,ylabelfontsize=15,
     yscale=:log10,
     yticks=[1e-15, 1e-10, 1e-5, 1e0],
     color=4
 )
+
+Plots.savefig("spectral-element-convergence-helmholtz.pdf")

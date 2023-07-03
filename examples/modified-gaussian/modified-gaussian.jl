@@ -51,25 +51,25 @@ end
 ###
 # Two-band-Fourier series discretisation
 ###
-T,U,C,F = HalfWeighted{:ab}(TwoBandJacobi(ρ,1,1,0)),TwoBandJacobi(ρ,0,0,0),TwoBandJacobi(ρ,1,1,0),Fourier()
-r = axes(T,1)
-D = Derivative(r)
-R = jacobimatrix(C) # mult by r
-r∂ = R * (C \ (D*T)) # r*∂
-∂² = (C \ (D^2 * T))
-r²∂² = R * R * ∂²
-Δᵣ = r²∂² + r∂
-L = C \ U
-M = L*(U \ T) # Identity
+# T,U,C,F = HalfWeighted{:ab}(TwoBandJacobi(ρ,1,1,0)),TwoBandJacobi(ρ,0,0,0),TwoBandJacobi(ρ,1,1,0),Fourier()
+# r = axes(T,1)
+# D = Derivative(r)
+# R = jacobimatrix(C) # mult by r
+# r∂ = R * (C \ (D*T)) # r*∂
+# ∂² = (C \ (D^2 * T))
+# r²∂² = R * R * ∂²
+# Δᵣ = r²∂² + r∂
+# L = C \ U
+# M = L*(U \ T) # Identity
 
-errors_TBF = []
-for n in 8:8:300
-    # Compute coefficients of solution to Helmholtz problem with Chebyshev-Fourier series
-    X, _ = twoband_fourier_helmholtz_modal_solve((U, F), (Δᵣ, L, M, R), rhs_xy, n, 0.0) 
-    print("Computed coefficients for n=$n \n")
+# errors_TBF = []
+# for n in 8:8:300
+#     # Compute coefficients of solution to Helmholtz problem with Chebyshev-Fourier series
+#     X, _ = twoband_fourier_helmholtz_modal_solve((U, F), (Δᵣ, L, M, R), rhs_xy, n, 0.0) 
+#     print("Computed coefficients for n=$n \n")
 
-    collect_errors((T,F,ρ), X, ua, errors_TBF)
-end
+#     collect_errors((T,F,ρ), X, ua, errors_TBF)
+# end
 
 ###
 # Zernike annular discretisation
@@ -103,24 +103,23 @@ PyPlot.savefig("modified-gaussian.pdf")
 ###
 # Convergence plot
 ###
-n = 1:20
-bs = [sum(1:10*b) for b in 1:length(errors_Z)]
+bs = [sum(1:b) for b in 10:10:200]
 Plots.plot(bs, errors_Z,
     label=L"$\mathrm{Zernike \,\, annular}$",
     linewidth=2,
     marker=:dot,
     markersize=5,
 )
-ns = [b^2/2 for b in 8:8:100]
-Plots.plot!(ns, errors_TBF,
-    label=L"$\mathrm{Two}$-$\mathrm{band} \otimes \mathrm{Fourier}$",
-    linewidth=2,
-    markershape=:diamond,
-    markersize=5,
-)
+# ns = [b^2/2 for b in 8:8:100]
+# Plots.plot!(ns, errors_TBF,
+#     label=L"$\mathrm{Two}$-$\mathrm{band} \otimes \mathrm{Fourier}$",
+#     linewidth=2,
+#     markershape=:diamond,
+#     markersize=5,
+# )
 
-ns = [n*(n+2) for n = 10:10:250]
-Plots.plot!(ns, errors_TF,
+ns = [(2n-1)*(n+2) for n = 10:10:250]
+Plots.plot!(ns[1:12], errors_TF[1:12],
     label=L"$\mathrm{Chebyshev}(r_\rho) \otimes \mathrm{Fourier}$",
     linewidth=2,
     markershape=:dtriangle,
@@ -128,8 +127,9 @@ Plots.plot!(ns, errors_TF,
 
     yscale=:log10,
     xtickfontsize=10, ytickfontsize=10,xlabelfontsize=15,ylabelfontsize=15,
-    ylim=[1e-15, 5e0],
+    ylim=[1e-15, 1e1],
     yticks=[1e-15,1e-10,1e-5,1e0],
+    xlim=[0, 3.2e4],
     legend=:topright,
     ylabel=L"$l^\infty\mathrm{-norm \;\; error}$",
     xlabel=L"$\# \mathrm{Basis \, \,functions}$",

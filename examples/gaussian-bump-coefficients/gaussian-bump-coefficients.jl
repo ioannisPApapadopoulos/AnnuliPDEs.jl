@@ -2,7 +2,7 @@ using AnnuliPDEs, ClassicalOrthogonalPolynomials, AlgebraicCurveOrthogonalPolyno
 using PyPlot, Plots, LaTeXStrings
 
 """
-This script implements the "Gaussian bump" example (section 7.3).
+This script implements the "Gaussian bump" example.
 
 We are solving Δu(x,y) = exp(a((x−b)²+(y−c)²) with a=25, b=0, and c = 0.99. 
 
@@ -43,13 +43,15 @@ for (ρ, i) in zip(ρs, 1:2)
     # Want to count the coefficients in a zigzag manner
     # so that we are comparing the same number of coefficients
     # with Zernike annular polynomials.
-    Xs = X[1:end-2, 1:end-2]
-    Xs = Xs[:,end:-1:1]
-    Fss = Fs[:,end:-1:1]
+    Xs = X[1:end-2, 1:end-1]
+    Xs_0 = (Xs[:,1:2:end])[:,end:-1:1]
+    Xs_1 = (Xs[:,2:2:end])[:,end:-1:1]
+    Fss_0 = (Fs[1:n,1:2:end])[:,end:-1:1]
+    Fss_1 = (Fs[1:n,2:2:end])[:,end:-1:1]
 
-    for ns = 1:n
-        append!(coeff_TF_u[i],norm(diag(Xs, ns-1), ∞))
-        append!(coeff_TF_f[i],norm(diag(Fss, ns-1), ∞))
+    for ns = 2:n
+        append!(coeff_TF_u[i],norm(vcat(diag(Xs_0, ns-1), diag(Xs_1, ns-2)), ∞))
+        append!(coeff_TF_f[i],norm(vcat(diag(Fss_0, ns-1),diag(Fss_1, ns-2)), ∞))
     end
     coeff_TF_u[i] = coeff_TF_u[i][end:-1:1]
     coeff_TF_f[i] = coeff_TF_f[i][end:-1:1]
@@ -59,38 +61,38 @@ end
 ###
 # Two-band-Fourier series discretisation
 ###
-n = 250
-coeff_TBF_f = [[], []]
-coeff_TBF_u = [[], []]
-for (ρ, i) in zip(ρs, 1:2)
-    T,U,C,F = HalfWeighted{:ab}(TwoBandJacobi(ρ,1,1,0)),TwoBandJacobi(ρ,0,0,0),TwoBandJacobi(ρ,1,1,0),Fourier()
-    r = axes(T,1)
-    D = Derivative(r)
-    R = jacobimatrix(C) # mult by r
-    r∂ = R * (C \ (D*T)) # r*∂
-    ∂² = (C \ (D^2 * T))
-    r²∂² = R * R * ∂²
-    Δᵣ = r²∂² + r∂
-    L = C \ U
-    M = L*(U \ T) # Identity
+# n = 250
+# coeff_TBF_f = [[], []]
+# coeff_TBF_u = [[], []]
+# for (ρ, i) in zip(ρs, 1:2)
+#     T,U,C,F = HalfWeighted{:ab}(TwoBandJacobi(ρ,1,1,0)),TwoBandJacobi(ρ,0,0,0),TwoBandJacobi(ρ,1,1,0),Fourier()
+#     r = axes(T,1)
+#     D = Derivative(r)
+#     R = jacobimatrix(C) # mult by r
+#     r∂ = R * (C \ (D*T)) # r*∂
+#     ∂² = (C \ (D^2 * T))
+#     r²∂² = R * R * ∂²
+#     Δᵣ = r²∂² + r∂
+#     L = C \ U
+#     M = L*(U \ T) # Identity
 
-    errors_TBF = []
-    # Compute coefficients of solution to Helmholtz problem with Chebyshev-Fourier series
-    (X, Fs) = twoband_fourier_helmholtz_modal_solve((U, F), (Δᵣ, L, M, R), rhs_xy, n, 0.0) 
+#     errors_TBF = []
+#     # Compute coefficients of solution to Helmholtz problem with Chebyshev-Fourier series
+#     (X, Fs) = twoband_fourier_helmholtz_modal_solve((U, F), (Δᵣ, L, M, R), rhs_xy, n, 0.0) 
     
-    # Want to count the coefficients in a zigzag manner
-    # so that we are comparing the same number of coefficients
-    # with Zernike annular polynomials.
-    Xs = X[:,end:-1:1]
-    Fss = Fs[:,end:-1:1]
+#     # Want to count the coefficients in a zigzag manner
+#     # so that we are comparing the same number of coefficients
+#     # with Zernike annular polynomials.
+#     Xs = X[:,end:-1:1]
+#     Fss = Fs[:,end:-1:1]
 
-    for ns = 1:n
-        append!(coeff_TBF_u[i],norm(diag(Xs, ns-1), ∞))
-        append!(coeff_TBF_f[i],norm(diag(Fss, ns-1), ∞))
-    end
-    coeff_TBF_u[i] = coeff_TBF_u[i][end:-1:1]
-    coeff_TBF_f[i] = coeff_TBF_f[i][end:-1:1]
-end
+#     for ns = 1:n
+#         append!(coeff_TBF_u[i],norm(diag(Xs, ns-1), ∞))
+#         append!(coeff_TBF_f[i],norm(diag(Fss, ns-1), ∞))
+#     end
+#     coeff_TBF_u[i] = coeff_TBF_u[i][end:-1:1]
+#     coeff_TBF_f[i] = coeff_TBF_f[i][end:-1:1]
+# end
 
 ###
 # Zernike annular discretisation
@@ -141,14 +143,14 @@ Plots.plot(0:n-1, [coeff_Z_f[1] coeff_Z_f[2]],
     markersize=5,
 )
 
-Plots.plot!(1:2:n-1, [coeff_TBF_f[1][1:2:n] coeff_TBF_f[2][1:2:n]],
-    label=[L"$\rho = 0.2, \; \mathrm{Two}$-$\mathrm{band}  \otimes \mathrm{Fourier}$" L"$\rho = 0.8, \; \mathrm{Two}$-$\mathrm{band}  \otimes \mathrm{Fourier}$"],
-    linewidth=2,
-    markersize=5,
-    linestyle=[:dashdotdot :solid],
-)
+# Plots.plot!(1:2:n-1, [coeff_TBF_f[1][1:2:n] coeff_TBF_f[2][1:2:n]],
+#     label=[L"$\rho = 0.2, \; \mathrm{Two}$-$\mathrm{band}  \otimes \mathrm{Fourier}$" L"$\rho = 0.8, \; \mathrm{Two}$-$\mathrm{band}  \otimes \mathrm{Fourier}$"],
+#     linewidth=2,
+#     markersize=5,
+#     linestyle=[:dashdotdot :solid],
+# )
 
-Plots.plot!(0:n-1, [coeff_TF_f[1] coeff_TF_f[2]],
+Plots.plot!(1:n-1, [coeff_TF_f[1] coeff_TF_f[2]],
 
     label=[L"$\rho = 0.2, \; \mathrm{Chebyshev}(r_\rho) \otimes \mathrm{Fourier}$" L"$\rho = 0.8, \; \mathrm{Chebyshev}(r_\rho) \otimes \mathrm{Fourier}$"],
     linewidth=2,
@@ -173,14 +175,14 @@ Plots.plot(0:n-1, [coeff_Z_u[1] coeff_Z_u[2]],
     markersize=5,
 )
 
-Plots.plot!(1:2:n-1, [coeff_TBF_u[1][1:2:n] coeff_TBF_u[2][1:2:n]],
-    label=[L"$\rho = 0.2, \; \mathrm{Two}$-$\mathrm{band}  \otimes \mathrm{Fourier}$" L"$\rho = 0.8, \; \mathrm{Two}$-$\mathrm{band}  \otimes \mathrm{Fourier}$"],
-    linewidth=2,
-    markersize=5,
-    linestyle=[:dashdotdot :solid],
-)
+# Plots.plot!(1:2:n-1, [coeff_TBF_u[1][1:2:n] coeff_TBF_u[2][1:2:n]],
+#     label=[L"$\rho = 0.2, \; \mathrm{Two}$-$\mathrm{band}  \otimes \mathrm{Fourier}$" L"$\rho = 0.8, \; \mathrm{Two}$-$\mathrm{band}  \otimes \mathrm{Fourier}$"],
+#     linewidth=2,
+#     markersize=5,
+#     linestyle=[:dashdotdot :solid],
+# )
 
-Plots.plot!(0:n-1, [coeff_TF_u[1] coeff_TF_u[2]],
+Plots.plot!(1:n-1, [coeff_TF_u[1] coeff_TF_u[2]],
 
     label=[L"$\rho = 0.2, \; \mathrm{Chebyshev}(r_\rho) \otimes \mathrm{Fourier}$" L"$\rho = 0.8, \; \mathrm{Chebyshev}(r_\rho) \otimes \mathrm{Fourier}$"],
     linewidth=2,

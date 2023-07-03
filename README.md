@@ -7,7 +7,7 @@ We numerically approximate the solution to a number of Poisson and Helmholtz equ
 |Figure|File: examples/|
 |:-:|:-:|
 |1|spy-plots/[spy-plots.jl](https://github.com/ioannisPApapadopoulos/AnnuliPDEs.jl/blob/main/examples/spy-plots/spy-plots.jl)|
-|2|condition-number/[laplacian-condition-numbers.jl](https://github.com/ioannisPApapadopoulos/AnnuliPDEs.jl/blob/main/examples/condition-number/laplacian-condition-numbers.jl.jl)|
+|2|condition-number/[laplacian-condition-numbers.jl](https://github.com/ioannisPApapadopoulos/AnnuliPDEs.jl/blob/main/examples/condition-number/laplacian-condition-numbers.jl)|
 |5|rotationally-invariant/[rotationally-invariant.jl](https://github.com/ioannisPApapadopoulos/AnnuliPDEs.jl/blob/main/examples/rotationally-invariant/rotationally-invariant.jl)|
 |6|modified-gaussian/[modified-gaussian.jl](https://github.com/ioannisPApapadopoulos/AnnuliPDEs.jl/blob/main/examples/modified-gaussian/modified-gaussian.jl)|
 |7|manufactured/[manufactured-solution.jl](https://github.com/ioannisPApapadopoulos/AnnuliPDEs.jl/blob/main/examples/manufactured/manufactured-solution.jl)|

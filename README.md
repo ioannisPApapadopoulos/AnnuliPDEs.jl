@@ -11,10 +11,11 @@ We numerically approximate the solution to a number of Poisson and Helmholtz equ
 |5|rotationally-invariant/[rotationally-invariant.jl](https://github.com/ioannisPApapadopoulos/AnnuliPDEs.jl/blob/main/examples/rotationally-invariant/rotationally-invariant.jl)|
 |6|modified-gaussian/[modified-gaussian.jl](https://github.com/ioannisPApapadopoulos/AnnuliPDEs.jl/blob/main/examples/modified-gaussian/modified-gaussian.jl)|
 |7|manufactured/[manufactured-solution.jl](https://github.com/ioannisPApapadopoulos/AnnuliPDEs.jl/blob/main/examples/manufactured/manufactured-solution.jl)|
-|8a|discontinuous-coefficients-data/[discontinuous-data-poisson.jl](https://github.com/ioannisPApapadopoulos/AnnuliPDEs.jl/blob/main/examples/discontinuous-coefficients-data/discontinuous-data-poisson.jl)|
-|8b/c|discontinuous-coefficients-data/[discontinuous-data-variable-helmholtz.jl](https://github.com/ioannisPApapadopoulos/AnnuliPDEs.jl/blob/main/examples/discontinuous-coefficients-data/discontinuous-data-variable-helmholtz.jl)|
+|8|condition-number/[laplacian-condition-numbers-2element.jl](https://github.com/ioannisPApapadopoulos/AnnuliPDEs.jl/blob/main/examples/condition-number/laplacian-condition-numbers-2element.jl)|
 |9a|discontinuous-coefficients-data/[discontinuous-data-poisson.jl](https://github.com/ioannisPApapadopoulos/AnnuliPDEs.jl/blob/main/examples/discontinuous-coefficients-data/discontinuous-data-poisson.jl)|
-|9b|discontinuous-coefficients-data/[discontinuous-data-variable-helmholtz.jl](https://github.com/ioannisPApapadopoulos/AnnuliPDEs.jl/blob/main/examples/discontinuous-coefficients-data/discontinuous-data-variable-helmholtz.jl)|
+|9b/c|discontinuous-coefficients-data/[discontinuous-data-variable-helmholtz.jl](https://github.com/ioannisPApapadopoulos/AnnuliPDEs.jl/blob/main/examples/discontinuous-coefficients-data/discontinuous-data-variable-helmholtz.jl)|
+|10a|discontinuous-coefficients-data/[discontinuous-data-poisson.jl](https://github.com/ioannisPApapadopoulos/AnnuliPDEs.jl/blob/main/examples/discontinuous-coefficients-data/discontinuous-data-poisson.jl)|
+|10b|discontinuous-coefficients-data/[discontinuous-data-variable-helmholtz.jl](https://github.com/ioannisPApapadopoulos/AnnuliPDEs.jl/blob/main/examples/discontinuous-coefficients-data/discontinuous-data-variable-helmholtz.jl)|
 
 ## Contact
 Ioannis Papadopoulos: ioannis.papadopoulos13@imperial.ac.uk

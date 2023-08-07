@@ -16,9 +16,9 @@ function helmholtz_modal_solve(f::AbstractBlockArray, b::Int, Δ::MultivariateOr
         M = length(j:2:b)
 
         if iszero(λ)
-            A = Δs[j][1:M,1:M]
+            A = view(Δs[j],1:M,1:M)
         else
-            A = (Δs[j]+λ*Ls[j])[1:M,1:M]
+            A = view((Δs[j]+λ*Ls[j]),1:M,1:M)
         end
 
         if j == 1
@@ -91,11 +91,11 @@ function helmholtz_modal_solve(Z::Vector{MultivariateOrthogonalPolynomial{2, T}}
         if iszero(λs)
             A[4:m+3,1:m+1] = Δs[1][j][1:m,1:m+1]
             # Do not forget inv(ρ^2) factor! To do with rescaling the Zernike polys
-            A[m+4:end,m+2:end-1] = inv(ρ^2)*Δs[2][j][1:m,1:m+1]
+            A[m+4:end,m+2:end-1] = inv(ρ^2)*view(Δs[2][j], 1:m,1:m+1)
         else
             A[4:m+3,1:m+1] = Δs[1][j][1:m,1:m+1] + λs[1]*Ls[1][j][1:m,1:m+1]
             # Do not forget inv(ρ^2) factor! To do with rescaling the Zernike polys
-            A[m+4:end,m+2:end-1] = inv(ρ^2)*Δs[2][j][1:m,1:m+1] + λs[2]*Ls[2][j][1:m,1:m+1]
+            A[m+4:end,m+2:end-1] = inv(ρ^2)*view(Δs[2][j], 1:m,1:m+1) + λs[2]*view(Ls[2][j], 1:m,1:m+1)
         end
 
         A[2, end] = 1-exp(-j) # tau-method stabilisation
@@ -256,6 +256,98 @@ function twoband_fourier_helmholtz_modal_solve(UF, ΔLMR, rhs_xy::Function, n::I
 
     return (X, Fs)
 end
+
+###
+# SEM method of Zernike for the inner disk and Chebyshev-Fourier for the outer annulus.
+###
+function chebyshev_fourier_zernike_helmholtz_modal_solve(B::Vector, rhs_xy::Function, f::AbstractVector, ρ::TV, n::Int, Δ::Vector, L::Vector=[], λs::AbstractVector=[], mmode=1:n) where TV
+    @assert length(B) == 2
+    Z = B[2]
+    @assert Z isa Zernike
+    @assert B[1] isa Tuple
+    (T, F) = B[1]
+    @assert T.parent isa ChebyshevT
+    @assert F isa Fourier
+
+    @assert Δ[2] isa MultivariateOrthogonalPolynomials.ModalInterlace
+    Δs = Δ[2].ops
+    Ls = L[2].ops
+
+    @assert Δ[1] isa Tuple
+    (Lₜ, M, R, D) = Δ[1]
+    @assert D isa Derivative
+    𝐫,𝛉 = ClassicalOrthogonalPolynomials.grid(T, 2n),ClassicalOrthogonalPolynomials.grid(F, 2n)
+    PT,PF = plan_transform(T, (2n,2n), 1),plan_transform(F, (2n,2n), 2)
+
+    # Coefficients for the annulus cell
+    𝐱 = 𝐫 .* cos.(𝛉')
+    𝐲 = 𝐫 .* sin.(𝛉')
+    Fs = PT * (PF * rhs_xy.(𝐱, 𝐲))
+
+    fs = [Fs, ModalTrav(f).matrix] # coefficients for disk and annulus cell
+
+    # multiply RHS by r^2 and convert to C
+    S = (R^2*M)[1:n,1:n]
+
+    # Break down into Fourier modes
+    zs = ModalTrav(Z[SVector(one(TV),zero(TV)), Block.(1:n+2)]).matrix
+
+    N = size(fs[2],1) + 1
+    us = zeros(N, 4N-3)
+
+    ze(r,θ,n) = Z[SVector(r*cos(θ)/ρ,r*sin(θ)/ρ), Block.(1:n+2)]
+    dze(r,θ,n) = derivative(r->ze(r,θ,n), r)
+    dzs = ModalTrav(dze(ρ,0,n)).matrix
+
+    X = zeros(n+1, 2n)
+    for j in mmode
+        # Form matrix to be solved
+        mTF = j-1
+        Δₘ = Lₜ - mTF^2*M + λs[1] * R^2*M
+
+        m = length(j:2:n) # Length of Zernike system
+        # Preallocate space for the matrix. Require n+1 for annulus, m+1 for the disk, +1 for the tau-method
+        A = zeros((n+1)+(m+1)+1, (n+1)+(m+1)+1)
+
+        # Boundary condition at r=1
+        A[1,1:n+1] = T[[end],1:n+1]
+        # Dirichlet element continuity row
+        A[2, 1:end-1] = [T[[begin],:][1:n+1]; -zs[1:m+1,2j-1]]'
+        # Radial derivative continuity row
+        A[3, 1:end-1] = [(D*T)[[begin],:][1:n+1]; -dzs[1:m+1,2j-1]]'
+
+        if iszero(λs)
+            A[4:n+3,1:n+1] = Δₘ[1:n,1:n+1]
+            # Do not forget inv(ρ^2) factor! To do with rescaling the Zernike polys
+            A[n+4:end,n+2:end-1] = inv(ρ^2)*view(Δs[j], 1:m, 1:m+1)
+        else
+            A[4:n+3,1:n+1] = Δₘ[1:n,1:n+1]
+            # Do not forget inv(ρ^2) factor! To do with rescaling the Zernike polys
+            A[n+4:end,n+2:end-1] = inv(ρ^2)*view(Δs[j], 1:m, 1:m+1) + λs[2]*view(Ls[j], 1:m, 1:m+1)
+        end
+
+        A[2, end] = 1-exp(-j) # tau-method stabilisation
+        A[n+3,end] = 1. # tau-method stabilisation
+
+        if j == 1
+            𝐛 = [0; 0; 0; S*fs[1][1:n,j]; fs[2][1:m,j]]
+            u_ = A \ 𝐛
+            X[:,j] = u_[1:n+1];
+            us[1:m+1,j] = u_[n+2:end-1];
+        else
+            𝐛 = [0; 0; 0; S*fs[1][1:n,2j-2]; fs[2][1:m,2j-2]]
+            u_ = A \ 𝐛
+            X[:,2j-2] = u_[1:n+1]; us[1:m+1,2j-2] = u_[n+2:end-1]
+
+            𝐛 = [0; 0; 0; S*fs[1][1:n,2j-1]; fs[2][1:m,2j-1]]
+            u_ = A \ 𝐛
+            X[:,2j-1] = u_[1:n+1]; us[1:m+1,2j-1] = u_[n+2:end-1]
+        end
+
+    end
+    (X, ModalTrav(us))
+end
+
 
 # Archived for the future and not used in the examples.
 # This solves the Helmholtz problem via least-squares not using a tau-method.

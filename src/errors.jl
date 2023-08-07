@@ -37,6 +37,30 @@ function collect_errors(Z::Weighted{T, <:MultivariateOrthogonalPolynomial}, u::P
     return errors
 end
 
+# Collect errors for a scaled Zernike basis
+function collect_errors(Z::Zernike{T}, u::ModalTrav{T, Matrix{T}}, ρ::T, ua::Function, scale::Bool=true, errors=[]) where T
+    (a, b) = Z.a, Z.b
+
+    N = 2*size((ModalTrav(u).matrix),1)-1
+    g = AnnuliOrthogonalPolynomials.grid(Z, Block(N))
+
+    F = ZernikeITransform{T}(N, a, b)
+    vals = F * u   # Synthesis on disk cell
+
+    p = g -> [g.r, g.θ]
+    rθ = map(p, g)
+    R = first.(rθ)
+    # Scale the disk cell so the outer radius is ρ
+    if scale
+        R = ρ*R
+    end
+    Θ = last.(rθ)
+    U = map(ua, R, Θ)
+
+    append!(errors, [norm(U-vals, ∞)])
+    return errors
+end
+
 # Collect errors for the (2-element) Zernike + Zernike annular basis
 function collect_errors(Z::Vector{MultivariateOrthogonalPolynomial{2,T}}, u::Tuple{ModalTrav{T, Matrix{T}}, ModalTrav{T, Matrix{T}}}, ua::Function, scale::Bool=true, errors=[]) where T
 
@@ -105,7 +129,7 @@ function _collect_errors(U::Adjoint{T, Matrix{T}}, Uₐ::Adjoint{T, Matrix{T}}, 
 end
 
 # Works for both Chebyshev and Two-band
-function collect_errors(TFρ::Tuple, X::AbstractMatrix, ua::Function, errors=[])
+function collect_errors(TFρ::Tuple, X::AbstractMatrix, ua::Function, errors=[], a=1)
 
     # One cell routine
     if length(TFρ) == 3
@@ -121,12 +145,12 @@ function collect_errors(TFρ::Tuple, X::AbstractMatrix, ua::Function, errors=[])
         V = promote_type(eltype(T), eltype(F))
 
         n = size(X,1)-2
-        Z = ZernikeAnnulus{V}(ρ,1,1) # want to measure the errors on the ZernikeAnnulus grid
+        Z = ZernikeAnnulus{V}(ρ,a,a) # want to measure the errors on the ZernikeAnnulus grid
 
         g = AnnuliOrthogonalPolynomials.grid(Z, Block(n))
         p = g -> [g.r, g.θ]; rθ = map(p, g); rs = first.(rθ)[:,1]; θs = last.(rθ)[1,:]
         # Compute values of the solution on the grid
-        Uu = (F[θs,1:2n]*(T[rs,1:n+2]*X)')' # Directly expand the tensor-product basis on the grid
+        Uu = (F[θs,1:size(X,2)]*(T[rs,1:size(X,1)]*X)')' # Directly expand the tensor-product basis on the grid
         return _collect_errors(Uu, θs, rs, ua, errors)
     # Two cell routine
     elseif length(TFρ) == 4
@@ -139,8 +163,8 @@ function collect_errors(TFρ::Tuple, X::AbstractMatrix, ua::Function, errors=[])
 
         n = (size(X,1)-2)÷2
         # When doing spectral element, we use these grids instead
-        Z = Zernike{V}(0,0)
-        Zₐ = ZernikeAnnulus{V}(ρ,0,0)
+        Z = Zernike{V}(a-1,a-1)
+        Zₐ = ZernikeAnnulus{V}(ρ,a-1,a-1)
         
         p = g -> [g.r, g.θ];
         g = AnnuliOrthogonalPolynomials.grid(Z, Block(n))
@@ -156,4 +180,19 @@ function collect_errors(TFρ::Tuple, X::AbstractMatrix, ua::Function, errors=[])
         error("Collect error not implemented for these arguments.")
     end
 
+end
+
+###
+# Collect error routines for the Zernike + Chebyshev-Fourier series
+###
+
+function collect_errors(TFZρ::Tuple, Xu::Tuple, ua::Function, errors=[])
+
+    (T, F, Z, ρ) = TFZρ
+    (X, u) = Xu
+
+    err1 = collect_errors((T, F, ρ), X, ua, [], 0)
+    err2 = collect_errors(Z, u, ρ, ua)
+
+    append!(errors, max(err1[1],err2[1]))
 end

@@ -12,7 +12,8 @@ import ClassicalOrthogonalPolynomials: HalfWeighted
 
 export Laplacian, ModalTrav, derivative, ZernikeAnnulus, HalfWeighted,
     helmholtz_modal_solve, chebyshev_fourier_helmholtz_modal_solve, twoband_fourier_helmholtz_modal_solve,
-    plot_solution, collect_errors
+    plot_solution, collect_errors,
+    chebyshev_fourier_zernike_helmholtz_modal_solve
 
 include("errors.jl")
 include("plotting.jl")

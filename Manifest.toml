@@ -943,9 +943,7 @@ version = "1.2.0"
 
 [[deps.SemiclassicalOrthogonalPolynomials]]
 deps = ["ArrayLayouts", "BandedMatrices", "ClassicalOrthogonalPolynomials", "ContinuumArrays", "FillArrays", "HypergeometricFunctions", "InfiniteArrays", "InfiniteLinearAlgebra", "LazyArrays", "LinearAlgebra", "QuasiArrays", "SpecialFunctions"]
-git-tree-sha1 = "af4883f624c9d6ce661db4e6f235c680453bad3f"
-repo-rev = "master"
-repo-url = "https://github.com/JuliaApproximation/SemiclassicalOrthogonalPolynomials.jl.git"
+path = "C:\\Users\\john.papad\\.julia\\dev\\SemiclassicalOrthogonalPolynomials"
 uuid = "291c01f3-23f6-4eb6-aeb0-063a639b53f2"
 version = "0.5.0"
 

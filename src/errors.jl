@@ -14,7 +14,7 @@ function collect_errors(Z::Weighted{T, <:MultivariateOrthogonalPolynomial}, u::P
     (a, b) = unweighted(Z).a, unweighted(Z).b
 
     N = 2*size((ModalTrav(u).matrix),1)-1
-    g = AlgebraicCurveOrthogonalPolynomials.grid(Z, Block(N))
+    g = AnnuliOrthogonalPolynomials.grid(Z, Block(N))
 
     if Z.P isa ZernikeAnnulus
         ρ = unweighted(Z).ρ 
@@ -47,8 +47,8 @@ function collect_errors(Z::Vector{MultivariateOrthogonalPolynomial{2,T}}, u::Tup
 
 
     N = 2*size((ModalTrav(u[1]).matrix),1)-1
-    gₐ = AlgebraicCurveOrthogonalPolynomials.grid(Z[1], Block(N))
-    g = AlgebraicCurveOrthogonalPolynomials.grid(Z[2], Block(N))
+    gₐ = AnnuliOrthogonalPolynomials.grid(Z[1], Block(N))
+    g = AnnuliOrthogonalPolynomials.grid(Z[2], Block(N))
 
     Fₐ = ZernikeAnnulusITransform{T}(N, α, β, 0, ρ)
     F = ZernikeITransform{T}(N, a, b)
@@ -123,7 +123,7 @@ function collect_errors(TFρ::Tuple, X::AbstractMatrix, ua::Function, errors=[])
         n = size(X,1)-2
         Z = ZernikeAnnulus{V}(ρ,1,1) # want to measure the errors on the ZernikeAnnulus grid
 
-        g = AlgebraicCurveOrthogonalPolynomials.grid(Z, Block(n))
+        g = AnnuliOrthogonalPolynomials.grid(Z, Block(n))
         p = g -> [g.r, g.θ]; rθ = map(p, g); rs = first.(rθ)[:,1]; θs = last.(rθ)[1,:]
         # Compute values of the solution on the grid
         Uu = (F[θs,1:2n]*(T[rs,1:n+2]*X)')' # Directly expand the tensor-product basis on the grid
@@ -143,8 +143,8 @@ function collect_errors(TFρ::Tuple, X::AbstractMatrix, ua::Function, errors=[])
         Zₐ = ZernikeAnnulus{V}(ρ,0,0)
         
         p = g -> [g.r, g.θ];
-        g = AlgebraicCurveOrthogonalPolynomials.grid(Z, Block(n))
-        gₐ = AlgebraicCurveOrthogonalPolynomials.grid(Zₐ, Block(n))
+        g = AnnuliOrthogonalPolynomials.grid(Z, Block(n))
+        gₐ = AnnuliOrthogonalPolynomials.grid(Zₐ, Block(n))
         rθ = map(p, g); rs = ρ.*first.(rθ)[:,1]; θs = last.(rθ)[1,:]
         rθₐ = map(p, gₐ); rsₐ = first.(rθₐ)[:,1]; θsₐ = last.(rθₐ)[1,:]
     

@@ -1,4 +1,4 @@
-using AnnuliPDEs, ClassicalOrthogonalPolynomials, AlgebraicCurveOrthogonalPolynomials, MultivariateOrthogonalPolynomials
+using AnnuliPDEs, ClassicalOrthogonalPolynomials, AnnuliOrthogonalPolynomials, MultivariateOrthogonalPolynomials
 using PyPlot, Plots, LaTeXStrings
 
 """

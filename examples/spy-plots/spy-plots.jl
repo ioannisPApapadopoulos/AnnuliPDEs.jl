@@ -1,6 +1,6 @@
 using ClassicalOrthogonalPolynomials, LinearAlgebra, Plots
-using AlgebraicCurveOrthogonalPolynomials
-import AlgebraicCurveOrthogonalPolynomials: Laplacian
+using AnnuliOrthogonalPolynomials
+import AnnuliOrthogonalPolynomials: Laplacian
 
 """
 This script gives spy plots of the Laplacian and Helmholtz operators

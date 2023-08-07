@@ -1,4 +1,4 @@
-using AnnuliPDEs, ClassicalOrthogonalPolynomials, AlgebraicCurveOrthogonalPolynomials, SemiclassicalOrthogonalPolynomials, LinearAlgebra
+using AnnuliPDEs, ClassicalOrthogonalPolynomials, AnnuliOrthogonalPolynomials, SemiclassicalOrthogonalPolynomials, LinearAlgebra
 using PyPlot, Plots, LaTeXStrings
 
 """

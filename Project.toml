@@ -1,10 +1,10 @@
 name = "AnnuliPDEs"
 uuid = "f4e2d45b-b1f0-4a55-8293-f4e67b32e009"
 authors = ["john.papad "]
-version = "0.1.0"
+version = "0.0.1"
 
 [deps]
-AlgebraicCurveOrthogonalPolynomials = "b2d6dd58-be48-4100-8375-7f7d22241ed8"
+AnnuliOrthogonalPolynomials = "de1797fd-24c3-4035-91a2-b52aecdcfb01"
 BlockArrays = "8e7c35d0-a365-5155-bbbb-fb81a777f24e"
 ClassicalOrthogonalPolynomials = "b30e2e7b-c4ee-47da-9d5f-2c5c27239acd"
 DelimitedFiles = "8bb1440f-4735-579b-a4ab-409b98df4dab"

@@ -1,5 +1,5 @@
 using AnnuliPDEs, ClassicalOrthogonalPolynomials, LinearAlgebra
-using AlgebraicCurveOrthogonalPolynomials, SemiclassicalOrthogonalPolynomials
+using AnnuliOrthogonalPolynomials, SemiclassicalOrthogonalPolynomials
 using Plots, LaTeXStrings
 
 """

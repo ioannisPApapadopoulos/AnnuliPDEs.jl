@@ -8,12 +8,12 @@ function plot_solution(Z::Weighted{T, ZernikeAnnulus{T}}, u::PseudoBlockVector, 
     (a, b, ρ) = unweighted(Z).a, unweighted(Z).b, unweighted(Z).ρ
 
     N = 2*size((ModalTrav(u).matrix),1)-1
-    g = AlgebraicCurveOrthogonalPolynomials.grid(Z, Block(N))
+    g = AnnuliOrthogonalPolynomials.grid(Z, Block(N))
 
     F = ZernikeAnnulusITransform{T}(N, a, b, 0, ρ) # 0 should be Z.c if implemented.
     vals = F * u # transform to grid
 
-    g = AlgebraicCurveOrthogonalPolynomials.grid(Z, Block(N))
+    g = AnnuliOrthogonalPolynomials.grid(Z, Block(N))
     if Z isa Weighted
         vals = w[g].*vals
     end
@@ -68,8 +68,8 @@ function plot_solution(Z::Vector{MultivariateOrthogonalPolynomial{2,T}}, u::Tupl
     append!(vals, [F[2]*u[2]])
     # Synthesis grid
     g = [
-        AlgebraicCurveOrthogonalPolynomials.grid(Z[1], Block(N)), 
-        AlgebraicCurveOrthogonalPolynomials.grid(Z[2], Block(N))
+        AnnuliOrthogonalPolynomials.grid(Z[1], Block(N)), 
+        AnnuliOrthogonalPolynomials.grid(Z[2], Block(N))
     ]
 
     # Use PyPlot to produce nice plots

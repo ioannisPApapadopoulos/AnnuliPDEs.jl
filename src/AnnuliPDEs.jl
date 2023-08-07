@@ -1,11 +1,11 @@
 module AnnuliPDEs
 
-using AlgebraicCurveOrthogonalPolynomials, ClassicalOrthogonalPolynomials, 
+using AnnuliOrthogonalPolynomials, ClassicalOrthogonalPolynomials, 
     MultivariateOrthogonalPolynomials, LinearAlgebra,
     SemiclassicalOrthogonalPolynomials, DelimitedFiles, LaTeXStrings, PyPlot, 
     BlockArrays, StaticArrays
 
-import AlgebraicCurveOrthogonalPolynomials: Laplacian, unweighted, blockcolsupport, ZernikeAnnulusITransform, OneTo, weight
+import AnnuliOrthogonalPolynomials: Laplacian, unweighted, blockcolsupport, ZernikeAnnulusITransform, OneTo, weight
 import ForwardDiff: derivative
 import MultivariateOrthogonalPolynomials: ZernikeITransform, ModalInterlace, ModalTrav
 import ClassicalOrthogonalPolynomials: HalfWeighted

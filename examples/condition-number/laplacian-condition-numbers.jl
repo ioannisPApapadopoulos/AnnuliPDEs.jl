@@ -1,5 +1,5 @@
 using ClassicalOrthogonalPolynomials, LinearAlgebra
-using AlgebraicCurveOrthogonalPolynomials
+using AnnuliOrthogonalPolynomials
 using Plots, LaTeXStrings
 
 """
@@ -56,19 +56,19 @@ Plots.plot(ms, [cs ds],
 
 Plots.savefig("laplacian-condition-numbers.pdf")
 
-Plots.plot(ms, [(2n-1)^2*ones(length(ms)) js.^2],
+Plots.plot(ms, [(n+2)*ones(length(ms)) js.^1],
     label=["Chebyshev-Fourier" "Zernike annular"],
     linewidth=2,
     markershape=[:circle :dtriangle],
     markersize=5,
 
     legend=:topleft,
-    ylabel="Condition number",
+    ylabel="Matrix size",
     xlabel=L"$m$",
     yscale=:log10,
     xtickfontsize=10, ytickfontsize=10,xlabelfontsize=15,ylabelfontsize=15,
-    yticks=[1e1,1e3,1e5,1e7],
-    ylim=[1e0,1e7]
+    yticks=[1e0, 1e1, 1e2, 1e3],
+    ylim=[0.5,1e3]
 )
 
 Plots.savefig("laplacian-matrix-size.pdf")

@@ -94,3 +94,51 @@ function plot_solution(Z::Vector{MultivariateOrthogonalPolynomial{2,T}}, u::Tupl
     cbar.set_label(latexstring(L"$u(x,y)$"))
     display(gcf())
 end
+
+# Plotting routine for a two-cell Zernike + Zernike annular basis
+function plot_solution(Z::Vector{ZernikeAnnulus{T}}, u::Tuple{ModalTrav{T, Matrix{T}}, ModalTrav{T, Matrix{T}}}) where T
+
+    @assert Z[1] isa ZernikeAnnulus && Z[2] isa ZernikeAnnulus
+
+    # Extract parameters
+    (α, β, ρ) = Z[1].a, Z[1].b, Z[1].ρ
+    (a, b, y) = Z[2].a, Z[2].b, Z[2].ρ
+
+    # Synthesis operators
+    N = 2*size((ModalTrav(u[1]).matrix),1)-1
+    F = [
+        ZernikeAnnulusITransform{T}(N, α, β, 0, ρ)
+        ZernikeAnnulusITransform{T}(N, a, b, 0, y)
+    ]
+
+    # Synthesis
+    vals = [F[1] * u[1]] # transform to grid
+    append!(vals, [F[2]*u[2]])
+    # Synthesis grid
+    g = [
+        AnnuliOrthogonalPolynomials.grid(Z[1], Block(N)),
+        AnnuliOrthogonalPolynomials.grid(Z[2], Block(N))
+    ]
+
+    # Use PyPlot to produce nice plots
+    p = g -> [g.r, g.θ]
+    rθ = [map(p, g[1])]
+    append!(rθ, [map(p, g[2])])
+    r = [first.(rθ[1])[:,1], ρ*first.(rθ[2])[:,1]]
+    θ = [last.(rθ[1])[1,:], last.(rθ[2])[1,:]]
+
+    θ = [[θ[1]; 2π], [θ[2]; 2π]]
+    vals[1] = hcat(vals[1], vals[1][:,1])
+    vals[2] = hcat(vals[2], vals[2][:,1])
+    PyPlot.rc("font", family="serif", size=14)
+    rcParams = PyPlot.PyDict(PyPlot.matplotlib["rcParams"])
+    rcParams["text.usetex"] = true
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection="polar")
+
+    pc = pcolormesh(θ[1], vcat(r[1],r[2]), vcat(vals[1],vals[2]), cmap="bwr", shading="gouraud")
+
+    cbar = plt.colorbar(pc, pad=0.2)
+    cbar.set_label(latexstring(L"$u(x,y)$"))
+    display(gcf())
+end

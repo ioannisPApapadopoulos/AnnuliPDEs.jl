@@ -118,6 +118,93 @@ function helmholtz_modal_solve(Z::Vector{MultivariateOrthogonalPolynomial{2, T}}
     ((ModalTrav(us[1:n+1, :]), ModalTrav(us[n+2:end, :])))
 end
 
+#
+# SEM of ZernikeAnnular + ZernikeAnnular
+#
+function helmholtz_modal_solve(Z::Vector{ZernikeAnnulus{T}}, f::Vector, b::Int, Δ::Vector, L::Vector=[], λs::AbstractVector=[], mmode=1:b, w::Function=(r,m)->r^m) where T
+    @assert Z[1] isa ZernikeAnnulus
+    @assert Z[2] isa ZernikeAnnulus
+    @assert Δ[1] isa MultivariateOrthogonalPolynomials.ModalInterlace
+    @assert Δ[2] isa MultivariateOrthogonalPolynomials.ModalInterlace
+    @assert L[1] isa MultivariateOrthogonalPolynomials.ModalInterlace
+    @assert L[2] isa MultivariateOrthogonalPolynomials.ModalInterlace
+    @assert f[1] isa AbstractBlockArray
+    @assert f[2] isa AbstractBlockArray
+
+    # Decompose into Fourier mode components
+    Δs = [Δ[i].ops for i in 1:2]
+    Ls = [L[i].ops for i in 1:2]
+
+    ρ = Z[1].ρ
+
+    # Used to compute the entries to enforce continuity. Much faster
+    # than evaluating ZernikeAnnulus directly.
+    ts = [inv(one(T)-Z[1].ρ^2), inv(one(T)-Z[2].ρ^2)]
+    P = [SemiclassicalJacobi.(t, Z[j].b, Z[j].a, 0:b-1) for (t, j) in zip(ts, 1:2)]
+    Q = [SemiclassicalJacobi.(t, Z[j].b+1, Z[j].a+1, 1:b) for (t, j) in zip(ts, 1:2)]
+
+    # Break down into Fourier modes
+    fs = [ModalTrav(f[j]).matrix for j in 1:2]
+
+    n = size(fs[1],1)
+    us = zeros(2n+2, 4(n+1)-3)
+
+    # For enforcing the radial derivative continuity
+    Ds = [Q[i] .\ [Derivative(axes(Q[i][1], 1)) * P[i][j] for j in 1:lastindex(P[i])] for i in 1:2];
+
+    # Loop over Fourier modes
+    for j in mmode
+        m = length(j:2:b) # Length of system
+        A = zeros(2m+4, 2m+4) # Preallocate space for the matrix. Require m+1 for each element +1 for the tau-method
+        c1 = P[1][j][begin, 1:m+1] # Boundary condition at r=1
+        cρ = w(ρ, j-1) * P[1][j][end, 1:m+1] # Contiuity condition at r=ρ
+        𝐜1 = P[2][j][begin, 1:m+1]
+        𝐜ρ = w(Z[2].ρ, j-1) * P[2][j][end, 1:m+1]
+
+        # Radial derivative continuity condition
+        dcρ = (
+            w(ρ, j-1) * 2ρ/(ρ^2-1) *(Q[1][j][end, 1:m+1]' * Ds[1][j][1:m+1, 1:m+1])'
+            + derivative(r->w(r, j-1), ρ) * P[1][j][end, 1:m+1]
+        )
+        d𝐜1 = (2 / (ρ*(Z[2].ρ^2 - 1)) * (Q[2][j][begin, 1:m+1]' * Ds[2][j][1:m+1, 1:m+1])'
+                + (j-1) / ρ *  P[2][j][begin, 1:m+1])
+
+        A[1,1:m+1] = c1                          # boundary condition row
+        A[2,1:end-2] = [cρ' -𝐜1']    # Dirichlet element continuity row
+        A[3,1:end-2] = [dcρ' -d𝐜1']  # Radial derivative continuity condition row
+        A[4, m+2:end-2] = 𝐜ρ
+
+        if iszero(λs)
+            A[5:m+4,1:m+1] = view(Δs[1][j],1:m,1:m+1)
+            # Do not forget inv(ρ^2) factor! To do with rescaling the Zernike polys
+            A[m+5:end,m+2:end-2] = inv(ρ^2)*view(Δs[2][j], 1:m,1:m+1)
+        else
+            A[5:m+4,1:m+1] = view(Δs[1][j]+ λs[1]*Ls[1][j], 1:m,1:m+1)
+            # Do not forget inv(ρ^2) factor! To do with rescaling the Zernike polys
+            A[m+5:end,m+2:end-2] = inv(ρ^2)*view(Δs[2][j], 1:m,1:m+1) + λs[2]*view(Ls[2][j], 1:m-1,1:m+1)
+        end
+
+        A[2, end-1] = 1-exp(-(j-1)) # tau-method stabilisation
+        A[4, end] = 1-exp(-j)
+        A[m+3,end-1] = 1. # tau-method stabilisation
+
+        if j == 1
+            𝐛 = [0; 0; 0; 0; fs[1][1:m,1]; fs[2][1:m,1]]
+            us[:,1] = (A \ 𝐛)[1:end-2]
+        else
+            𝐛 = [0; 0; 0; 0; fs[1][1:m,2j-2]; fs[2][1:m,2j-2]]
+            u_ = A \ 𝐛
+            us[1:m+1,2j-2] = u_[1:m+1]; us[n+2:n+m+2,2j-2] = u_[m+2:end-2]
+
+            𝐛 = [0; 0; 0; 0; fs[1][1:m,2j-1]; fs[2][1:m,2j-1]]
+            u_ = A \ 𝐛
+            us[1:m+1,2j-1] = u_[1:m+1]; us[n+2:n+m+2,2j-1] = u_[m+2:end-2]
+        end
+
+    end
+    ((ModalTrav(us[1:n+1, :]), ModalTrav(us[n+2:end, :])))
+end
+
 # This function splits the Helmholtz solve via Chebyshev-Fourier into a series of
 # one-dimensional solves per Fourier mode.
 function chebyshev_fourier_helmholtz_modal_solve(TF, LMR, rhs_xy::Function, n::Int, λ::V=0.0) where V  
@@ -326,7 +413,7 @@ function chebyshev_fourier_zernike_helmholtz_modal_solve(B::Vector, rhs_xy::Func
             A[n+4:end,n+2:end-1] = inv(ρ^2)*view(Δs[j], 1:m, 1:m+1) + λs[2]*view(Ls[j], 1:m, 1:m+1)
         end
 
-        A[2, end] = 1-exp(-j) # tau-method stabilisation
+        # A[2, end] = 1-exp(-j) # tau-method stabilisation
         A[n+3,end] = 1. # tau-method stabilisation
 
         if j == 1
@@ -349,6 +436,112 @@ function chebyshev_fourier_zernike_helmholtz_modal_solve(B::Vector, rhs_xy::Func
 end
 
 
+###
+# SEM method of Zernike for the inner disk and Chebyshev-Fourier for the outer annulus.
+###
+function zernikeannulus_chebyshev_fourier_helmholtz_modal_solve(B::Vector, rhs_xy::Function, f::AbstractVector, n::Int, Δ::Vector, L::Vector=[], λs::AbstractVector=[], mmode=1:n, w::Function=(r,m)->r^m)
+    @assert length(B) == 2
+    Z = B[1]
+    TV = eltype(Z)
+    @assert Z isa ZernikeAnnulus
+    @assert B[2] isa Tuple
+    (T, F) = B[2]
+    @assert T.parent isa ChebyshevT
+    @assert F isa Fourier
+
+    @assert Δ[1] isa MultivariateOrthogonalPolynomials.ModalInterlace
+    Δs = Δ[1].ops
+    Ls = L[1].ops
+
+    @assert Δ[2] isa Tuple
+    (Lₜ, M, R, D) = Δ[2]
+    @assert D isa Derivative
+    𝐫,𝛉 = ClassicalOrthogonalPolynomials.grid(T, 2n),ClassicalOrthogonalPolynomials.grid(F, 2n)
+    PT,PF = plan_transform(T, (2n,2n), 1),plan_transform(F, (2n,2n), 2)
+
+    # Coefficients for the annulus cell
+    𝐱 = 𝐫 .* cos.(𝛉')
+    𝐲 = 𝐫 .* sin.(𝛉')
+    Fs = PT * (PF * rhs_xy.(𝐱, 𝐲))
+
+    fs = [ModalTrav(f).matrix, Fs] # coefficients for disk and annulus cell
+
+    # multiply RHS by r^2 and convert to C
+    S = (R^2*M)[1:n-1,1:n-1]
+
+    N = size(fs[1],1) + 1
+    us = zeros(N, 4N-3)
+
+    ρ = Z.ρ
+
+    # Used to compute the entries to enforce continuity. Much faster
+    # than evaluating ZernikeAnnulus directly.
+    P = SemiclassicalJacobi.(inv(one(TV)-ρ^2), Z.b, Z.a, 0:n-1)
+    Q = SemiclassicalJacobi.(inv(one(TV)-ρ^2), Z.b+1, Z.a+1, 1:n)
+
+    Ds = Q .\ [Derivative(axes(Q[1], 1)) * P[j] for j in 1:lastindex(P)];
+
+    X = zeros(n+1, 2n)
+    for j in mmode
+        # Form matrix to be solved
+        mTF = j-1
+        Δₘ = Lₜ - mTF^2*M + λs[2] * R^2*M
+
+        m = length(j:2:n) # Length of ZernikeAnnulus system
+        # Preallocate space for the matrix. Require m+1 for Zernike annulus, 
+        # n+1 for the Chebyshev-Fourier annulus, +1 for the tau-method
+        A = zeros((m+1)+(n+1)+1, (m+1)+(n+1)+1)
+
+        c1 = P[j][begin, 1:m+1] # Boundary condition at r=1
+        cρ = w(ρ, j-1) * P[j][end, 1:m+1] # Contiuity condition at r=ρ
+
+        # Radial derivative continuity condition
+        dcρ = (
+            w(ρ, j-1) * 2ρ/(ρ^2-1) *(Q[j][end, 1:m+1]' * Ds[j][1:m+1, 1:m+1])'
+            + derivative(r->w(r, j-1), ρ) * P[j][end, 1:m+1]
+        )
+
+        # Boundary condition at r=1
+        A[1,1:m+1] = c1
+        # Dirichlet element continuity row
+        A[2, 1:end-1] = [cρ; -T[[end],:][1:n+1]]'
+        # Radial derivative continuity row
+        A[3, 1:end-1] = [dcρ;-(D*T)[[end],:][1:n+1]]'
+        # Boundary condition at r = α
+        A[4,m+2:end-1] = T[[begin],:][1:n+1]
+
+        if iszero(λs)
+            A[5:m+4,1:m+1] = view(Δs[j],1:m,1:m+1)
+            # Do not forget inv(ρ^2) factor! To do with rescaling the Zernike polys
+            A[m+5:end,m+2:end-1] = Δₘ[1:n-1,1:n+1]
+        else
+            A[5:m+4,1:m+1] = view(Δs[j], 1:m, 1:m+1) + λs[1]*view(Ls[j], 1:m, 1:m+1)
+            # Do not forget inv(ρ^2) factor! To do with rescaling the Zernike polys
+            A[m+5:end,m+2:end-1] = Δₘ[1:n-1,1:n+1]
+        end
+
+        A[2, end] = 1-exp(-(j-1)) # tau-method stabilisation
+        A[m+3,end] = 1. # tau-method stabilisation
+        # A[end,end] = 1.
+
+        if j == 1
+            𝐛 = [0; 0; 0; 0; fs[1][1:m,j]; S*fs[2][1:n-1,j]]
+            u_ = A \ 𝐛
+            us[1:m+1,j] = u_[1:m+1];
+            X[:,j] = u_[m+2:end-1];
+        else
+            𝐛 = [0; 0; 0; 0; fs[1][1:m,2j-2]; S*fs[2][1:n-1,2j-2]; ]
+            u_ = A \ 𝐛
+            X[:,2j-2] = u_[m+2:end-1]; us[1:m+1,2j-2] =u_[1:m+1]
+
+            𝐛 = [0; 0; 0; 0; fs[1][1:m,2j-1]; S*fs[2][1:n-1,2j-1]]
+            u_ = A \ 𝐛
+            X[:,2j-1] = u_[m+2:end-1]; us[1:m+1,2j-1] = u_[1:m+1]
+        end
+
+    end
+    (ModalTrav(us), X)
+end
 # Archived for the future and not used in the examples.
 # This solves the Helmholtz problem via least-squares not using a tau-method.
 # function modal_solve_LS(P, f, Δs, L, b, ρ, mmode=1:b, w=(x,m)->r^m)

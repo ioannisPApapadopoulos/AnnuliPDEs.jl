@@ -19,14 +19,15 @@ SemiclassicalOrthogonalPolynomials = "291c01f3-23f6-4eb6-aeb0-063a639b53f2"
 StaticArrays = "90137ffa-7385-5640-81b9-e52037218182"
 
 [compat]
-AnnuliOrthogonalPolynomials = "0.0.1"
+AnnuliOrthogonalPolynomials = "0.0.1, 0.0.2"
 BlockArrays = "0.16"
 ClassicalOrthogonalPolynomials = "0.11"
 ContinuumArrays = "0.14"
 DelimitedFiles = "1"
 ForwardDiff = "0.10"
 LaTeXStrings = "1"
-MultivariateOrthogonalPolynomials = "0.5"
+MultivariateOrthogonalPolynomials = "0.5, 0.6"
+
 Plots = "1"
 PyPlot = "2"
 SemiclassicalOrthogonalPolynomials = "0.5"

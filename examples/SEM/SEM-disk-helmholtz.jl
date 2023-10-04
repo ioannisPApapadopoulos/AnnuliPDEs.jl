@@ -1,15 +1,16 @@
 using AnnuliPDEs, ClassicalOrthogonalPolynomials, AnnuliOrthogonalPolynomials, MultivariateOrthogonalPolynomials
 using PyPlot, Plots, LaTeXStrings
+using DelimitedFiles
 
 """
-This script implements the Poisson example of
+This script implements the Helmholtz example of
 
-"Discontinuous variable coefficients and data" (section 7.4).
+"Discontinuous variable coefficients and data on a disk" (section 7.3).
 
-We are solving Δ u(x,y) = exp(−a((x−b)²+(y−c)²)) * (−4a * (−a(b² − 2bx + c² − 2cy + x² + y²) + 1)))
+We are solving (Δ + λ(x,y)) u(x,y) = ∑ᵢ dᵢ exp(−aᵢ((x−bᵢ)²+(y−cᵢ)²)) * (−4aᵢ * (−aᵢ(bᵢ² − 2bᵢx + cᵢ² − 2cᵢy + x² + y²) + 1)))
 on a disk.
 
-Here we have a right-hand side that has a jump in the radial direction at r=1/2.
+Here we have a right-hand side and a Helmholtz coefficient that has a jump in the radial direction at r=1/2.
 
 The solution is continuous. Hence we use a spectral element method to
 split the disk domain into an inner disk cell and an outer annulus cell with
@@ -17,8 +18,10 @@ inradius at r=1/2. This performs particularly well.
 
 """
 
-ρ = 0.5; κ₀ = 1e2; κ₁ = 1e0;
-# Exact solution
+# ρ is the inner radius on the annulus cell
+# κ₀ is the jump coefficient on the inner cell
+# κ₁ is the jump coefficient on the outer cell
+ρ, κ₀, κ₁ = 0.5, 1e2, 1e0
 
 # Gaussian bump
 θs = [0, π/2, π/3, 5π/4]
@@ -66,6 +69,7 @@ function rhs_xy_scale(x, y)
     rhs_(r̃,θ)
 end
 
+Nn = 1000 # Poly degree of over-sampled grid for error collection.
 λs = [λ(0.8); λ(0.2)]
 
 ###
@@ -82,10 +86,23 @@ L =  [Zd[1] \ Z[1],
         Zd[2]\ Z[2]
 ];
 
+# Split into Fourier mode components
+Δs = [Δ[i].ops for i in 1:2];
+Ls = [L[i].ops for i in 1:2];
+
+[Δs[i][151] for i in 1:2]; # pre-allocation speeds things up
+[Ls[i][151] for i in 1:2];
+
 xyₐ = axes(Z[1],1); xₐ,yₐ = first.(xyₐ),last.(xyₐ)
 xy = axes(Z[2],1); x,y = first.(xy),last.(xy)
 x = [xₐ, x];
 y = [yₐ, y];
+
+# Oversampled grid for pointwise error computation
+G = AnnuliOrthogonalPolynomials.grid.(Z, Block(Nn))
+# Exact solution evaluated on the grid
+U = [ua.(get_rs.(G[1]), get_θs.(G[1]))]
+append!(U, [ua.(ρ*get_rs.(G[2]), get_θs.(G[2]))])
 
 errors_Z_2 = []
 u = []
@@ -101,19 +118,20 @@ for n in 11:10:151
     # Solve by breaking down into solves for each Fourier mode.
     # We utilise a tau-method to enforce the boundary conditions
     # and continuity.
-    u = helmholtz_modal_solve(Z, f, n, Δ, L, λs)
+    u = zernike_modal_solve(Z, f, n, Δs, Ls, λs)
     
     print("Computed coefficients for n=$n \n")
 
-    collect_errors(Z, u, ua, true, errors_Z_2)
+    collect_errors(Z, u, U, errors_Z_2)
 end
+writedlm("errors_Z_2.log", errors_Z_2)
 
 # Plot the right-hand side
-plot_solution(Zd, (ModalTrav(f[1]), ModalTrav(f[2])))
-PyPlot.savefig("spectral-element-f.pdf")
+plot_solution(Zd, (ModalTrav(f[1]), ModalTrav(f[2])), ttl=L"$f_2(x,y)$")
+PyPlot.savefig("spectral-element-helmholtz-f.png", dpi=700)
 # Plot the solution
 plot_solution(Z, u)
-PyPlot.savefig("spectral-element-u.pdf")
+PyPlot.savefig("spectral-element-u.png", dpi=700)
 
 
 ###
@@ -130,8 +148,10 @@ R = C \ (r .* C) # mult by r
 Z = Zernike(0,0)
 Zd = Zernike(0,2)
 
-Δ =   Zd \ (Laplacian(axes(Z,1)) * Z) 
-L =  Zd \ Z
+Δ =   Zd \ (Laplacian(axes(Z,1)) * Z);
+L =  Zd \ Z;
+Δs, Ls = Δ.ops, L.ops;
+Δs[111]; Ls[111]; # pre-allocation speeds things up
 
 xy = axes(Z,1); x,y = first.(xy),last.(xy)
 
@@ -143,15 +163,18 @@ for n in 11:10:111
     # Solve by breaking down into solves for each Fourier mode.
     # We utilise a tau-method to enforce the boundary conditions
     # and continuity.
-    X, u = chebyshev_fourier_zernike_helmholtz_modal_solve([(T,F), Z], rhs_xy, f, ρ, n, [(Lₜ, M, R, D), Δ], [[], L], λs)
+    X, u = chebyshev_fourier_zernike_helmholtz_modal_solve([(T,F), Z], rhs_xy, f, ρ, n, [(Lₜ, M, R, D), Δs], [[], Ls], λs)
     
     print("Computed coefficients for n=$n \n")
-    collect_errors((T,F,Z,ρ), (X,u), ua, errors_TF_Z)
+    collect_errors((T,F,Z,ρ), (X,u), U, G, errors_TF_Z)
 end
-
+writedlm("errors_TF_Z.log", errors_TF_Z)
 ###
 # Convergence plot
 ###
+
+errors_Z_2 = readdlm("errors_Z_2.log")
+errors_TF_Z = readdlm("errors_TF_Z.log")
 
 tfns = [(2b-1)*(b+1) + sum(1:b) for b in 11:10:111]
 Plots.plot(tfns, errors_TF_Z,

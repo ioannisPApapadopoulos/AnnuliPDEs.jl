@@ -6,16 +6,18 @@ We numerically approximate the solution to a number of Poisson and Helmholtz equ
 
 |Figure|File: examples/|
 |:-:|:-:|
-|1|spy-plots/[spy-plots.jl](https://github.com/ioannisPApapadopoulos/AnnuliPDEs.jl/blob/main/examples/spy-plots/spy-plots.jl)|
-|2|condition-number/[laplacian-condition-numbers.jl](https://github.com/ioannisPApapadopoulos/AnnuliPDEs.jl/blob/main/examples/condition-number/laplacian-condition-numbers.jl)|
-|5|rotationally-invariant/[rotationally-invariant.jl](https://github.com/ioannisPApapadopoulos/AnnuliPDEs.jl/blob/main/examples/rotationally-invariant/rotationally-invariant.jl)|
-|6|modified-gaussian/[modified-gaussian.jl](https://github.com/ioannisPApapadopoulos/AnnuliPDEs.jl/blob/main/examples/modified-gaussian/modified-gaussian.jl)|
-|7|manufactured/[manufactured-solution.jl](https://github.com/ioannisPApapadopoulos/AnnuliPDEs.jl/blob/main/examples/manufactured/manufactured-solution.jl)|
-|8|condition-number/[laplacian-condition-numbers-2element.jl](https://github.com/ioannisPApapadopoulos/AnnuliPDEs.jl/blob/main/examples/condition-number/laplacian-condition-numbers-2element.jl)|
-|9a|discontinuous-coefficients-data/[discontinuous-data-poisson.jl](https://github.com/ioannisPApapadopoulos/AnnuliPDEs.jl/blob/main/examples/discontinuous-coefficients-data/discontinuous-data-poisson.jl)|
-|9b/c|discontinuous-coefficients-data/[discontinuous-data-variable-helmholtz.jl](https://github.com/ioannisPApapadopoulos/AnnuliPDEs.jl/blob/main/examples/discontinuous-coefficients-data/discontinuous-data-variable-helmholtz.jl)|
-|10a|discontinuous-coefficients-data/[discontinuous-data-poisson.jl](https://github.com/ioannisPApapadopoulos/AnnuliPDEs.jl/blob/main/examples/discontinuous-coefficients-data/discontinuous-data-poisson.jl)|
-|10b|discontinuous-coefficients-data/[discontinuous-data-variable-helmholtz.jl](https://github.com/ioannisPApapadopoulos/AnnuliPDEs.jl/blob/main/examples/discontinuous-coefficients-data/discontinuous-data-variable-helmholtz.jl)|
+|1a|SEM/[SEM-disk-poisson.jl](https://github.com/ioannisPApapadopoulos/AnnuliPDEs.jl/blob/main/examples/SEM/SEM-disk-poisson.jl)|
+|1b|SEM/[SEM-disk-helmholtz.jl](https://github.com/ioannisPApapadopoulos/AnnuliPDEs.jl/blob/main/examples/SEM/SEM-disk-helmholtz.jl)|
+|1c|SEM/[SEM-disk-helmholtz.jl](https://github.com/ioannisPApapadopoulos/AnnuliPDEs.jl/blob/main/examples/SEM/SEM-disk-helmholtz.jl)|
+|2|spy-plots/[spy-plots.jl](https://github.com/ioannisPApapadopoulos/AnnuliPDEs.jl/blob/main/examples/spy-plots/spy-plots.jl)|
+|3|condition-number/[laplacian-condition-numbers.jl](https://github.com/ioannisPApapadopoulos/AnnuliPDEs.jl/blob/main/examples/condition-number/laplacian-condition-numbers.jl)|
+|6|forced-helmholtz/[forced-helmholtz.jl](https://github.com/ioannisPApapadopoulos/AnnuliPDEs.jl/blob/main/examples/forced-helmholtz/forced-helmholtz.jl)|
+|7|forced-helmholtz/[forced-helmholtz.jl](https://github.com/ioannisPApapadopoulos/AnnuliPDEs.jl/blob/main/examples/forced-helmholtz/forced-helmholtz.jl)|
+|8|modified-gaussian/[modified-gaussian.jl](https://github.com/ioannisPApapadopoulos/AnnuliPDEs.jl/blob/main/examples/modified-gaussian/modified-gaussian.jl)|
+|9|condition-number/[laplacian-condition-numbers-2element.jl](https://github.com/ioannisPApapadopoulos/AnnuliPDEs.jl/blob/main/examples/condition-number/laplacian-condition-numbers-2element.jl)|
+|10a|SEM/[SEM-disk-poisson.jl](https://github.com/ioannisPApapadopoulos/AnnuliPDEs.jl/blob/main/examples/SEM/SEM-disk-poisson.jl)|
+|10b|SEM/[SEM-disk-helmholtz.jl](https://github.com/ioannisPApapadopoulos/AnnuliPDEs.jl/blob/main/examples/SEM/SEM-disk-helmholtz.jl)|
+|11|SEM/[SEM-annulus-helmholtz.jl](https://github.com/ioannisPApapadopoulos/AnnuliPDEs.jl/blob/main/examples/SEM/SEM-annulus-helmholtz.jl)|
 
 ## Contact
 Ioannis Papadopoulos: ioannis.papadopoulos13@imperial.ac.uk

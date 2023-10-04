@@ -1,8 +1,8 @@
 # AnnuliPDEs.jl
 
-This repository implements the numerical examples found in the paper "Optimal complexity and semiclassical Jacobi polynomials with applications to multivariate orthogonal polynomials" (2023).
+This repository implements the numerical examples found in the paper "Building hierarchies of semiclassical Jacobi polynomials with applications to spectral methods in annuli", I. P. A. Papadopoulos, S. Olver, R. M. Slevinsky, T. S. Gutleb, (2023).
 
-We numerically approximate the solution to a number of Poisson and Helmholtz equations posed on disk and annulus domains utilising a Chebyshev-Fourier series, a two-band-Fourier series, and Zernike/Zernike annular polynomials.
+We numerically approximate the solution to a number of Poisson and Helmholtz equations posed on disk and annulus domains utilising a Chebyshev-Fourier series and Zernike/Zernike annular polynomials.
 
 |Figure|File: examples/|
 |:-:|:-:|

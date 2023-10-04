@@ -1,12 +1,13 @@
 using AnnuliPDEs, ClassicalOrthogonalPolynomials, AnnuliOrthogonalPolynomials, MultivariateOrthogonalPolynomials
 using PyPlot, Plots, LaTeXStrings
+using DelimitedFiles
 
 """
 This script implements the Poisson example of
 
-"Discontinuous variable coefficients and data" (section 7.4).
+"Discontinuous variable coefficients and data on a disk" (section 7.3).
 
-We are solving Δ u(x,y) = exp(−a((x−b)²+(y−c)²)) * (−4a * (−a(b² − 2bx + c² − 2cy + x² + y²) + 1)))
+We are solving Δu(x,y) = ∑ᵢ dᵢ exp(−aᵢ((x−bᵢ)²+(y−cᵢ)²)) * (−4aᵢ * (−aᵢ(bᵢ² − 2bᵢx + cᵢ² − 2cᵢy + x² + y²) + 1)))
 on a disk.
 
 Here we have a right-hand side that has a jump in the radial direction at r=1/2.
@@ -16,9 +17,10 @@ split the disk domain into an inner disk cell and an outer annulus cell with
 inradius at r=1/2. This performs particularly well.
 
 """
-
+# ρ is the inner radius on the annulus cell
+# κ₀ is the jump coefficient on the inner cell
+# κ₁ is the jump coefficient on the outer cell
 ρ = 0.5; κ₀ = 1e2; κ₁ = 1e0; 
-# Exact solution
 
 # Gaussian bump
 θs = [0, π/2, π/3, 5π/4]
@@ -62,6 +64,7 @@ function rhs_xy_scale(x, y)
     rhs_(r̃,θ)
 end
 
+Nn = 1000 # Poly degree of over-sampled grid for error collection.
 λs = [0; 0]
 
 ###
@@ -72,7 +75,16 @@ wZ = Weighted(Z)
 
 Δ = Z \ (Laplacian(axes(Z,1)) * wZ);
 L = Z \ wZ;
+Δs, Ls = Δ.ops, L.ops; # decompose into Fourier modes
+Δs[311]; # pre-allocation speeds things up
+Ls[311];
 
+xy = axes(Z,1); x,y = first.(xy),last.(xy)
+
+# Oversampled grid
+G = AnnuliOrthogonalPolynomials.grid(Z, Block(Nn))
+# Exact solution on oversampled grid
+U = ua.(get_rs.(G), get_θs.(G))
 xy = axes(Z,1); x,y = first.(xy),last.(xy)
 errors_Z = []
 for n in 11:10:311
@@ -80,12 +92,12 @@ for n in 11:10:311
     f = Z[:, Block.(1:n)] \ rhs_xy.(x, y)
 
     # Solve by breaking down into solves for each Fourier mode
-    u = helmholtz_modal_solve(f, n, Δ, L)
-    
-    print("Computed coefficients for n=$n \n")
+    u = weighted_zernike_modal_solve(f, n, Δs, Ls)
+    collect_errors(wZ, u, U, G, errors_Z)
 
-    collect_errors(wZ, u, ua, errors_Z)
+    print("Computed coefficients for n=$n \n")
 end
+writedlm("errors_Z.log", errors_Z)
 
 ###
 # (2-element) Spectral element Zernike discretisation
@@ -101,10 +113,23 @@ L =  [Zd[1] \ Z[1],
         Zd[2]\ Z[2]
 ];
 
+# Split into Fourier mode components
+Δs = [Δ[i].ops for i in 1:2];
+Ls = [L[i].ops for i in 1:2];
+
+[Δs[i][151] for i in 1:2]; # pre-allocation speeds things up
+[Ls[i][151] for i in 1:2];
+
 xyₐ = axes(Z[1],1); xₐ,yₐ = first.(xyₐ),last.(xyₐ)
 xy = axes(Z[2],1); x,y = first.(xy),last.(xy)
 x = [xₐ, x];
 y = [yₐ, y];
+
+# Oversampled grid
+G = AnnuliOrthogonalPolynomials.grid.(Z, Block(Nn))
+# Exact solution on oversampled grid
+U = [ua.(get_rs.(G[1]), get_θs.(G[1]))]
+append!(U, [ua.(ρ*get_rs.(G[2]), get_θs.(G[2]))])
 
 errors_Z_2 = []
 u = []
@@ -120,19 +145,19 @@ for n in 11:10:151
     # Solve by breaking down into solves for each Fourier mode.
     # We utilise a tau-method to enforce the boundary conditions
     # and continuity.
-    u = helmholtz_modal_solve(Z, f, n, Δ, L, λs)
-    
-    print("Computed coefficients for n=$n \n")
+    u = zernike_modal_solve(Z, f, n, Δs, Ls, λs)
+    collect_errors(Z, u, U, errors_Z_2)
 
-    collect_errors(Z, u, ua, true, errors_Z_2)
+    print("Computed coefficients for n=$n \n")
 end
+writedlm("errors_Z_2.log", errors_Z_2)
 
 # Plot the right-hand side
-plot_solution(Zd, (ModalTrav(f[1]), ModalTrav(f[2])))
-PyPlot.savefig("spectral-element-f.pdf")
+plot_solution(Zd, (ModalTrav(f[1]), ModalTrav(f[2])), ttl=latexstring(L"$f_1(x,y)$"))
+PyPlot.savefig("spectral-element-f.png", dpi=700)
 # Plot the solution
 plot_solution(Z, u)
-PyPlot.savefig("spectral-element-u.pdf")
+PyPlot.savefig("spectral-element-u.png", dpi=700)
 
 
 ###
@@ -149,8 +174,10 @@ R = C \ (r .* C) # mult by r
 Z = Zernike(0,0)
 Zd = Zernike(0,2)
 
-Δ =   Zd \ (Laplacian(axes(Z,1)) * Z) 
-L =  Zd \ Z
+Δ =  Zd \ (Laplacian(axes(Z,1)) * Z);
+Δs = Δ.ops; # split into Fourier modes
+Δs[111]; # pre-allocation speeds things up
+
 
 xy = axes(Z,1); x,y = first.(xy),last.(xy)
 
@@ -162,15 +189,20 @@ for n in 11:10:111
     # Solve by breaking down into solves for each Fourier mode.
     # We utilise a tau-method to enforce the boundary conditions
     # and continuity.
-    X, u = chebyshev_fourier_zernike_helmholtz_modal_solve([(T,F), Z], rhs_xy, f, ρ, n, [(Lₜ, M, R, D), Δ], [[], L], λs)
+    X, u = chebyshev_fourier_zernike_helmholtz_modal_solve([(T,F), Z], rhs_xy, f, ρ, n, [(Lₜ, M, R, D), Δs], [[], []], λs)
     
     print("Computed coefficients for n=$n \n")
-    collect_errors((T,F,Z,ρ), (X,u), ua, errors_TF_Z)
+    collect_errors((T,F,Z,ρ), (X,u), U, G, errors_TF_Z)
 end
+writedlm("errors_TF_Z.log", errors_TF_Z)
 
 ###
 # Convergence plot
 ###
+errors_Z = readdlm("errors_Z.log")
+errors_Z_2 = readdlm("errors_Z_2.log")
+errors_TF_Z = readdlm("errors_TF_Z.log")
+
 ns = [sum(1:b) for b in 11:10:311]
 Plots.plot(ns, errors_Z,
     label=L"\mathrm{Zernike \,\, (1 \,\, element)}",
@@ -197,7 +229,8 @@ Plots.plot!(ns, errors_Z_2,
     ylabel=L"$l^\infty\mathrm{-norm \;\; error}$",
     xlabel=L"$\# \mathrm{Basis \; functions}$",
     ylim=[1e-15, 5e0],
-    xlim = [0, 6.3e4],
+    # xlim = [0, 6.3e4],
+    xlim = [0, 5.5e4],
     legend=:right,
     xtickfontsize=10, ytickfontsize=10,xlabelfontsize=15,ylabelfontsize=15,
     yscale=:log10,

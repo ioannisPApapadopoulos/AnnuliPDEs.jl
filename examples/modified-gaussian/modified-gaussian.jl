@@ -1,5 +1,5 @@
-using AnnuliPDEs, ClassicalOrthogonalPolynomials, AnnuliOrthogonalPolynomials, SemiclassicalOrthogonalPolynomials
-using PyPlot, Plots, LaTeXStrings
+using AnnuliPDEs, ClassicalOrthogonalPolynomials, AnnuliOrthogonalPolynomials
+using PyPlot, Plots, LaTeXStrings, DelimitedFiles
 
 """
 This script implements the "Modified Gaussian bump" example (section 7.2).
@@ -28,6 +28,42 @@ function rhs_xy(x, y)
     4*c1*exp(c1*((c2 - x)^2 + (c3 - y)^2))*(c1*(c2^2 - 2*c2*x + c3^2 - 2*c3*y + x^2 + y^2) + 1)
 end
 
+Nn = 1000 # Poly degree of over-sampled grid for error collection.
+
+###
+# Zernike annular discretisation
+###
+Z = ZernikeAnnulus(ρ,1,1)
+wZ = Weighted(Z)
+
+Δ = Z \ (Laplacian(axes(Z,1)) * wZ);
+Δs = Δ.ops; # split into Fourier modes
+Δs[200]; # pre-allocation speeds things up
+
+# Oversampled grid
+G = AnnuliOrthogonalPolynomials.grid(Z, Block(Nn))
+# Exact solution on oversampled grid
+U = ua.(get_rs.(G), get_θs.(G))
+
+xy = axes(Z,1); x,y = first.(xy),last.(xy)
+errors_Z = []
+u = []
+for n in 10:10:200
+    # Expand RHS in Zernike annular polynomials
+    f = Z[:, Block.(1:n)] \ rhs_xy.(x, y)
+
+    # Solve by breaking down into solves for each Fourier mode
+    u = weighted_zernike_modal_solve(f, n, Δs, [])
+    collect_errors(wZ, u, U, G, errors_Z)
+    
+    print("Computed coefficients for n=$n \n")
+end
+writedlm("errors_Z.log", errors_Z)
+
+# Plot the solution
+plot_solution(wZ, u, inner_radial=ρ)
+PyPlot.savefig("modified-gaussian.png", dpi=700)
+
 ###
 # Chebyshev-Fourier series discretisation
 ###
@@ -40,65 +76,14 @@ M = C\T # Identity
 R = C \ (r .* C) # mult by r
 
 errors_TF = []
-for n in 10:10:250
+for n in 10:10:120
     # Compute coefficients of solution to Helmholtz problem with Chebyshev-Fourier series
-    X, _ = chebyshev_fourier_helmholtz_modal_solve((T, F), (L, M, R), rhs_xy, n, 0.0) 
+    X = chebyshev_fourier_helmholtz_modal_solve((T, F), (L, M, R), rhs_xy, n, 0.0) 
+    collect_errors((T,F,ρ), X, U, G, errors_TF)
+
     print("Computed coefficients for n=$n \n")
-
-    collect_errors((T,F,ρ), X, ua, errors_TF)
 end
-
-###
-# Two-band-Fourier series discretisation
-###
-# T,U,C,F = HalfWeighted{:ab}(TwoBandJacobi(ρ,1,1,0)),TwoBandJacobi(ρ,0,0,0),TwoBandJacobi(ρ,1,1,0),Fourier()
-# r = axes(T,1)
-# D = Derivative(r)
-# R = jacobimatrix(C) # mult by r
-# r∂ = R * (C \ (D*T)) # r*∂
-# ∂² = (C \ (D^2 * T))
-# r²∂² = R * R * ∂²
-# Δᵣ = r²∂² + r∂
-# L = C \ U
-# M = L*(U \ T) # Identity
-
-# errors_TBF = []
-# for n in 8:8:300
-#     # Compute coefficients of solution to Helmholtz problem with Chebyshev-Fourier series
-#     X, _ = twoband_fourier_helmholtz_modal_solve((U, F), (Δᵣ, L, M, R), rhs_xy, n, 0.0) 
-#     print("Computed coefficients for n=$n \n")
-
-#     collect_errors((T,F,ρ), X, ua, errors_TBF)
-# end
-
-###
-# Zernike annular discretisation
-###
-Z = ZernikeAnnulus(ρ,1,1)
-wZ = Weighted(Z)
-
-Δ = Z \ (Laplacian(axes(Z,1)) * wZ);
-L = Z \ wZ;
-
-xy = axes(Z,1); x,y = first.(xy),last.(xy)
-errors_Z = []
-u = []
-for n in 10:10:200
-
-    # Expand RHS in Zernike annular polynomials
-    f = Z[:, Block.(1:n)] \ rhs_xy.(x, y)
-
-    # Solve by breaking down into solves for each Fourier mode
-    u = helmholtz_modal_solve(f, n, Δ, L)
-    
-    print("Computed coefficients for n=$n \n")
-
-    collect_errors(wZ, u, ua, errors_Z)
-end
-
-# Plot the solution
-plot_solution(wZ, u)
-PyPlot.savefig("modified-gaussian.pdf")
+writedlm("errors_TF.log", errors_TF)
 
 ###
 # Convergence plot
@@ -110,16 +95,9 @@ Plots.plot(bs, errors_Z,
     marker=:dot,
     markersize=5,
 )
-# ns = [b^2/2 for b in 8:8:100]
-# Plots.plot!(ns, errors_TBF,
-#     label=L"$\mathrm{Two}$-$\mathrm{band} \otimes \mathrm{Fourier}$",
-#     linewidth=2,
-#     markershape=:diamond,
-#     markersize=5,
-# )
 
-ns = [(2n-1)*(n+2) for n = 10:10:250]
-Plots.plot!(ns[1:12], errors_TF[1:12],
+ns = [(2n-1)*(n+2) for n = 10:10:120]
+Plots.plot!(ns, errors_TF,
     label=L"$\mathrm{Chebyshev}(r_\rho) \otimes \mathrm{Fourier}$",
     linewidth=2,
     markershape=:dtriangle,

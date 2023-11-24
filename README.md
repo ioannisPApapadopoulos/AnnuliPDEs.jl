@@ -11,6 +11,7 @@ We numerically approximate the solution to a number of Poisson and Helmholtz equ
 |1c|SEM/[SEM-disk-helmholtz.jl](https://github.com/ioannisPApapadopoulos/AnnuliPDEs.jl/blob/main/examples/SEM/SEM-disk-helmholtz.jl)|
 |2|spy-plots/[spy-plots.jl](https://github.com/ioannisPApapadopoulos/AnnuliPDEs.jl/blob/main/examples/spy-plots/spy-plots.jl)|
 |3|condition-number/[laplacian-condition-numbers.jl](https://github.com/ioannisPApapadopoulos/AnnuliPDEs.jl/blob/main/examples/condition-number/laplacian-condition-numbers.jl)|
+|4|complexity/[complexity.jl](https://github.com/ioannisPApapadopoulos/AnnuliPDEs.jl/blob/main/examples/complexity/complexity.jl)|
 |6|forced-helmholtz/[forced-helmholtz.jl](https://github.com/ioannisPApapadopoulos/AnnuliPDEs.jl/blob/main/examples/forced-helmholtz/forced-helmholtz.jl)|
 |7|forced-helmholtz/[forced-helmholtz.jl](https://github.com/ioannisPApapadopoulos/AnnuliPDEs.jl/blob/main/examples/forced-helmholtz/forced-helmholtz.jl)|
 |8|modified-gaussian/[modified-gaussian.jl](https://github.com/ioannisPApapadopoulos/AnnuliPDEs.jl/blob/main/examples/modified-gaussian/modified-gaussian.jl)|
